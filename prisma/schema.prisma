@@ -24,6 +24,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+  resumes       Resume[]
 }
 
 model Job {
@@ -51,6 +52,14 @@ model Analysis {
   missingSkills  String[]
   recommendation String
   createdAt      DateTime @default(now())
+}
+
+model Resume {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
 }
 
 enum JobStatus {
