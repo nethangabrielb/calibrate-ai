@@ -10,7 +10,7 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 
 import Link from "next/link";
 
@@ -18,6 +18,7 @@ import { CreateAnalysisDialog } from "@/components/create-analysis-dialog";
 import { Separator } from "@/components/ui/separator";
 
 import { formatDate } from "@/lib/data";
+import { uploadResumeFile } from "@/lib/resume";
 import { cn } from "@/lib/utils";
 
 import { Analysis } from "@/types/analysis";
@@ -25,9 +26,13 @@ import { Application } from "@/types/application";
 
 const ResumeSchema = z.object({
   resume: z
-    .string()
-    .min(10, "Resume must be at least 10 characters long")
-    .refine((val) => val.trim().length > 0, "Resume cannot be empty"),
+    .instanceof(FileList)
+    .refine((files: FileList) => files[0]?.type === "application/pdf", {
+      message: "Only PDF files are accepted.",
+    })
+    .refine((files: FileList) => files[0]?.size < 5 * 1024 * 1024, {
+      message: "File size must be less than 5MB.",
+    }),
 });
 
 type ResumeFormData = z.infer<typeof ResumeSchema>;
@@ -75,9 +80,15 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
   const {
     register,
     handleSubmit,
+    watch,
+    getValues,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<ResumeFormData>({
     resolver: zodResolver(ResumeSchema),
+    defaultValues: {
+      resume: undefined,
+    },
   });
 
   const statusStyle = (
@@ -97,31 +108,47 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
     }
   };
 
-  const onSubmit: SubmitHandler<ResumeFormData> = async (_data) => {
-    const resume = _data.resume;
+  useEffect(() => {
+    const resume = getValues("resume")?.[0];
 
-    const res = await fetch(`/api/analysis/${id}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ resume }),
-    });
-
-    const json = await res.json();
-
-    if (!res.ok) {
-      toast.error(json.message || "Failed to run analysis.");
-      console.error("Failed to run analysis");
-      return;
+    if (watch("resume") && resume && !isSubmitting) {
+      handleSubmit(onSubmit)();
     }
+  }, [watch("resume")]);
 
-    if (json.success) {
-      queryClient.invalidateQueries({ queryKey: ["analyses", id] });
-      toast.success(json.message || "Analysis created successfully!");
-      setIsOpen(false);
-    } else {
-      toast.error(json.message || "Failed to run analysis");
+  const onSubmit: SubmitHandler<ResumeFormData> = async (_data) => {
+    const resumeFile = _data.resume?.[0];
+
+    try {
+      const parsedResumeFile = await uploadResumeFile(resumeFile as File);
+      if (parsedResumeFile.success) {
+        const res = await fetch(`/api/analysis/${id}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ resume: parsedResumeFile.resume }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          toast.error(json.message || "Failed to run analysis.");
+          console.error("Failed to run analysis");
+          return;
+        }
+        if (json.success) {
+          queryClient.invalidateQueries({ queryKey: ["analyses", id] });
+          toast.success(json.message || "Analysis created successfully!");
+          setIsOpen(false);
+        } else {
+          toast.error(json.message || "Failed to run analysis");
+        }
+      } else {
+        toast.error(parsedResumeFile.error || "Failed to upload resume.");
+      }
+    } catch (error) {
+      toast.error((error as Error).message || "Failed to upload resume.");
+      console.error("Failed to upload resume:", error);
+      return;
     }
   };
 
@@ -142,6 +169,7 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
               isOpen={isOpen}
               setIsOpen={setIsOpen}
               buttonText="Re-run AI Analysis"
+              reset={reset}
             />
           </div>
         </AnalysisPanel>
@@ -162,6 +190,7 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
           isSubmitting={isSubmitting}
           isOpen={isOpen}
           setIsOpen={setIsOpen}
+          reset={reset}
         />
       </div>
     );
