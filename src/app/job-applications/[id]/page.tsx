@@ -32,7 +32,8 @@ const ResumeSchema = z.object({
     })
     .refine((files: FileList) => files[0]?.size < 5 * 1024 * 1024, {
       message: "File size must be less than 5MB.",
-    }),
+    })
+    .nullable(),
 });
 
 type ResumeFormData = z.infer<typeof ResumeSchema>;
@@ -87,7 +88,7 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
   } = useForm<ResumeFormData>({
     resolver: zodResolver(ResumeSchema),
     defaultValues: {
-      resume: undefined,
+      resume: null,
     },
   });
 
