@@ -97,7 +97,7 @@ This project was built to:
 
 ### Upcoming
 
-- [ ] Resume upload (PDF parsing)
+- [x] Resume upload (PDF parsing)
 - [ ] Bulk application import (CSV)
 - [ ] Application timeline/activity log
 - [ ] Email notifications for status changes
