@@ -69,7 +69,7 @@ This project was built to:
 - [x] **User Registration & Authentication** — Email/password signup with strong validation (12+ char, special chars, numbers) + Google OAuth via Better Auth
 - [x] **Job Application Tracking** — Full CRUD for job applications with company, title, description, location, salary, and currency support
 - [x] **Application Status Management** — Track status across `APPLIED`, `INTERVIEWING`, `OFFERED`, and `REJECTED` stages
-- [x] **AI-Powered Resume Analysis** — Paste your resume and get an instant AI-generated fit score, skill match/gap analysis, and personalized recommendations
+- [x] **AI-Powered Resume Analysis** — Upload your resume and get an instant AI-generated fit score, skill match/gap analysis, and personalized recommendations
 - [x] **Analytics Dashboard** — Overview cards (total applications, average AI score, active applications, offers), bar chart by status, and recent applications table
 - [x] **Search & Filter** — Global search across applications with column sorting (salary, date, AI score)
 - [x] **Paginated Data Table** — Powered by TanStack Table with 8 items per page, sorting, and global filtering
