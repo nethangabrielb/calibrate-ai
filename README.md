@@ -47,12 +47,10 @@
 
 ## Overview
 
-> **Calibrate AI** is a full-stack AI-powered job application tracking platform built with **Next.js 16**, **Prisma 7**, and **Mistral AI**. It allows job seekers to log, manage, and track their job applications while leveraging AI to analyze how well their resume matches each job description, providing a quantified fit score, matching/missing skill breakdowns, and actionable recommendations.
+> **Calibrate AI** is a full-stack AI-powered job application tracking platform built with **Next.js 16**, **Prisma 7**, and **Mistral AI**. It allows job seekers to log, manage, and track their job applications, and run AI analysis that scores their resume against a job description.
 
 <img width="1901" height="1097" alt="image" src="https://github.com/user-attachments/assets/b5341c34-96c0-448f-951f-b00c7129d4bf" />
 <img width="1919" height="1098" alt="image" src="https://github.com/user-attachments/assets/b0bf8298-e07c-4835-9f24-9c18b07fb0bb" />
-
-
 
 This project was built to:
 
@@ -69,7 +67,7 @@ This project was built to:
 - [x] **User Registration & Authentication** — Email/password signup with strong validation (12+ char, special chars, numbers) + Google OAuth via Better Auth
 - [x] **Job Application Tracking** — Full CRUD for job applications with company, title, description, location, salary, and currency support
 - [x] **Application Status Management** — Track status across `APPLIED`, `INTERVIEWING`, `OFFERED`, and `REJECTED` stages
-- [x] **AI-Powered Resume Analysis** — Upload your resume and get an instant AI-generated fit score, skill match/gap analysis, and personalized recommendations
+- [x] **AI-Powered Resume Analysis** — Upload a PDF resume and get an instant AI-generated fit score, skill match/gap analysis, and personalized recommendations
 - [x] **Analytics Dashboard** — Overview cards (total applications, average AI score, active applications, offers), bar chart by status, and recent applications table
 - [x] **Search & Filter** — Global search across applications with column sorting (salary, date, AI score)
 - [x] **Paginated Data Table** — Powered by TanStack Table with 8 items per page, sorting, and global filtering
@@ -82,7 +80,7 @@ This project was built to:
 - [x] **Skill Extraction** — Extracts 8–12 matching skills and 5–8 missing skills from both resume and job description, ranked by relevance
 - [x] **Actionable Recommendations** — 4-sentence structured recommendation: fit verdict, strongest alignments, critical gap, and concrete next step
 - [x] **Re-run Analysis** — Run multiple analyses per application as you update your resume
-- [x] **Rate Limiting** — Upstash Redis sliding window rate limiter (8 requests/hour per user) to prevent AI API abuse
+- [x] **Rate Limiting** — Upstash Redis sliding window rate limiter (**15 requests/hour per user**) to prevent AI API abuse
 
 ### Technical
 
@@ -135,6 +133,7 @@ This project was built to:
 | [Better Auth](https://www.better-auth.com/) | Authentication framework (email/password + OAuth) |
 | [Zod](https://zod.dev/) | Runtime schema validation and type inference |
 | [Upstash Rate Limit](https://upstash.com/) | Serverless Redis-based rate limiting (sliding window) |
+| [unpdf](https://www.npmjs.com/package/unpdf) | PDF resume text extraction |
 | [bcryptjs](https://www.npmjs.com/package/bcryptjs) | Password hashing |
 | [jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken) | JWT token utilities |
 
@@ -209,7 +208,8 @@ calibrate-ai/
 │   │       │   └── [id]/route.ts              # GET single application
 │   │       ├── analysis/
 │   │       │   └── [applicationId]/route.ts   # GET analyses / POST run AI analysis
-│   │       └── dashboard/route.ts             # GET dashboard aggregate data
+│   │       ├── dashboard/route.ts             # GET dashboard aggregate data
+│   │       └── resume/route.ts                # POST PDF resume upload + text extraction
 │   ├── actions/
 │   │   ├── application.ts         # Server Actions: create, update, delete
 │   │   └── auth.ts                # Server Actions: signup, login
@@ -220,7 +220,7 @@ calibrate-ai/
 │   │   ├── applications-table.tsx         # TanStack Table for applications
 │   │   ├── applications-table-skeleton.tsx # Table loading skeleton
 │   │   ├── columns.tsx                    # Table column definitions
-│   │   ├── create-analysis-dialog.tsx     # AI analysis dialog with resume input
+│   │   ├── create-analysis-dialog.tsx     # AI analysis dialog with resume upload
 │   │   ├── delete-dialog.tsx              # Delete confirmation dialog
 │   │   ├── input.tsx                      # Custom TextField component
 │   │   ├── currency-select.tsx            # Currency selector (ISO 4217)
@@ -247,7 +247,8 @@ calibrate-ai/
 │   │   ├── auth-client.ts         # Client-side auth client instance
 │   │   ├── prisma.ts              # Prisma Client singleton with PG adapter
 │   │   ├── isAuthenticated.ts     # Server-side authentication guard
-│   │   ├── rateLimit.ts           # Upstash Redis rate limiter (8 req/hr sliding window)
+│   │   ├── rateLimit.ts           # Upstash Redis rate limiter (15 req/hr sliding window)
+│   │   ├── resume.ts              # Client helper to upload PDF resume
 │   │   ├── token.ts               # HTTP-only cookie token utility
 │   │   ├── data.ts                # Date formatting utility (date-fns)
 │   │   └── utils.ts               # cn() — clsx + tailwind-merge utility
@@ -277,7 +278,7 @@ calibrate-ai/
 
 ### Architecture Pattern
 
-> **Monolith (Next.js Full-Stack)** — A single Next.js 16 application serving both the frontend (React Server Components + Client Components) and backend (API Route Handlers + Server Actions). The database layer uses Prisma ORM with the native PostgreSQL driver adapter.
+> **Monolith (Next.js Full-Stack)** — A single Next.js 16 application serving both the frontend (React Server Components + Client Components) and backend (API Route Handlers + Server Actions).
 
 ### Data Flow Architecture
 
@@ -292,8 +293,8 @@ graph TD
     F -->|Structured JSON| E
     E -->|Zod-validated output| B
     B -->|Rate limit check| G[Upstash Redis]
-    A -->|OAuth / Login| H[Better Auth]
-    H -->|Session management| D
+    A -->|Resume upload| I[POST /api/resume]
+    I -->|PDF text extraction| J[unpdf]
 ```
 
 ### Request Flow
@@ -450,18 +451,34 @@ Better Auth handles all auth endpoints automatically through the catch-all route
 | `updateApplication` | `src/actions/application.ts` | Update an existing application (ownership check) |
 | `deleteApplication` | `src/actions/application.ts` | Delete application + cascade delete analyses |
 
+### Resume Upload / Parsing
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `POST` | `/api/resume` | Upload a **PDF** resume and extract plain text for analysis | ✅ |
+
+**POST Request (multipart/form-data):**
+
+- `resume`: PDF file (max **5MB**)
+
+**POST Response (200):**
+
+```json
+{ "success": true, "resume": "...extracted text..." }
+```
+
 ### AI Analysis
 
 | Method | Endpoint | Description | Auth | Rate Limited |
 |--------|----------|-------------|------|--------------|
 | `GET` | `/api/analysis/:applicationId` | Get all analyses for an application (ordered by `createdAt DESC`) | ✅ + ownership | No |
-| `POST` | `/api/analysis/:applicationId` | Run AI analysis (resume vs job description) | ✅ + ownership | ✅ 8 req/hr |
+| `POST` | `/api/analysis/:applicationId` | Run AI analysis (resume vs job description) | ✅ + ownership | ✅ 15 req/hr |
 
 **POST Request Body:**
 
 ```json
 {
-  "resume": "string (min 10 characters — your full resume text)"
+  "resume": "string (min 10 characters — extracted resume text)"
 }
 ```
 
@@ -637,15 +654,17 @@ The AI analysis system is the core differentiator of Calibrate AI. Here's how it
 ### Architecture
 
 ```
-User → Paste Resume → POST /api/analysis/:applicationId
-    → Rate limit check (Upstash Redis, 8 req/hr sliding window)
-    → Fetch job description from database
-    → Construct prompt with resume + job description
-    → Vercel AI SDK generateText() with structured output
-    → Mistral ministral-8b-latest model
-    → Zod schema validation on response
-    → Persist to PostgreSQL via Prisma
-    → Return structured analysis
+User → Upload PDF Resume → POST /api/resume
+    → PDF text extraction (unpdf)
+    → POST /api/analysis/:applicationId
+        → Rate limit check (Upstash Redis, 15 req/hr sliding window)
+        → Fetch job description from database
+        → Construct prompt with resume + job description
+        → Vercel AI SDK generateText() with structured output
+        → Mistral ministral-8b-latest model
+        → Zod schema validation on response
+        → Persist to PostgreSQL via Prisma
+        → Return structured analysis
 ```
 
 ### AI Model Configuration
@@ -684,13 +703,13 @@ Rate limiting is implemented via Upstash Redis with a sliding window algorithm:
 ```typescript
 const ratelimit = new Ratelimit({
   redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(8, "1 h"),
+  limiter: Ratelimit.slidingWindow(15, "1 h"),
   analytics: true,
 });
 ```
 
 - **Window**: 1 hour
-- **Limit**: 8 requests per user
+- **Limit**: 15 requests per user
 - **Algorithm**: Sliding window
 - **Scope**: Per authenticated user ID
 
@@ -774,7 +793,7 @@ The application uses a custom teal-centric design system defined in `globals.css
 | ✅ Done | Rate-limited AI analysis (Upstash Redis) |
 | ✅ Done | Responsive sidebar with mobile sheet |
 | ✅ Done | TanStack Table with sorting, filtering, pagination |
-| 📋 Planned | PDF resume upload and parsing |
+| ✅ Done | PDF resume upload + parsing |
 | 📋 Planned | Bulk CSV import for applications |
 | 📋 Planned | Application timeline / activity log |
 | 📋 Planned | Email notifications for status changes |
@@ -817,6 +836,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 - [TanStack](https://tanstack.com/) — React Query + React Table
 - [Upstash](https://upstash.com/) — Serverless Redis
 - [Lucide Icons](https://lucide.dev/) — Icon set
+- [unpdf](https://www.npmjs.com/package/unpdf) — PDF text extraction
 
 ---
 
