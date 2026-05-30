@@ -1,8 +1,10 @@
+import { Resume } from "@/types/resume";
+
 export const uploadResumeFile = async (
   file: File,
 ): Promise<{
   success: boolean;
-  resume: string;
+  resume: Resume | null;
   error?: string;
   status?: number;
 }> => {
@@ -18,7 +20,7 @@ export const uploadResumeFile = async (
     const errorData = await res.json();
     return {
       success: false,
-      resume: "",
+      resume: null,
       error: errorData.error || "Failed to upload resume.",
       status: res.status,
     };

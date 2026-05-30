@@ -3,6 +3,7 @@ import { extractText, getDocumentProxy } from "unpdf";
 import { NextRequest, NextResponse } from "next/server";
 
 import { isUserAuthenticated } from "@/lib/isAuthenticated";
+import prisma from "@/lib/prisma";
 
 export const POST = async (_request: NextRequest) => {
   // First we check if user is authenticated
@@ -24,5 +25,15 @@ export const POST = async (_request: NextRequest) => {
   const pdf = await getDocumentProxy(new Uint8Array(buffer));
   const { text } = await extractText(pdf, { mergePages: true });
 
-  return NextResponse.json({ success: true, resume: text });
+  // NEW: save resume and associate it with current user in database
+  const resume = await prisma.resume.create({
+    data: {
+      content: text,
+      userId: user.id,
+      name: file.name,
+    },
+  });
+
+  // Return the resume data in the response
+  return NextResponse.json({ success: true, resume: resume });
 };
