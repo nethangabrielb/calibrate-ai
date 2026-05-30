@@ -95,7 +95,18 @@ This project was built to:
 
 ### Upcoming
 
+### Upcoming
 - [x] Resume upload (PDF parsing)
+- [x] Resume versioning + analysis history (currently working)
+- [ ] AI resume rewriter / optimizer
+- [ ] Interview preparation system
+- [ ] Analytics intelligence
+- [ ] Real-time notifications + background jobs
+- [ ] Browser extension (LinkedIn, Indeed, Greenhouse, Lever)
+- [ ] AI semantic search
+- [ ] Job match recommendation engine
+- [ ] Public portfolio dashboard
+- [ ] Team / recruiter mode
 - [ ] Bulk application import (CSV)
 - [ ] Application timeline/activity log
 - [ ] Email notifications for status changes
