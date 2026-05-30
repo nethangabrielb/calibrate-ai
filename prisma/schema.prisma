@@ -56,14 +56,14 @@ model Analysis {
 }
 
 model Resume {
-  id         Int      @id @default(autoincrement())
-  analysisId Int
-  analysis   Analysis @relation(fields: [analysisId], references: [id])
+  id         Int       @id @default(autoincrement())
+  analysisId Int?
+  analysis   Analysis? @relation(fields: [analysisId], references: [id])
   name       String
   userId     String
-  user       User     @relation(fields: [userId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
   content    String
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 }
 
 enum JobStatus {
