@@ -1,6 +1,7 @@
 "use client";
 
 import { FormState, UseFormRegister } from "react-hook-form";
+import { ZodIssue } from "zod/v3";
 
 import { useRef } from "react";
 
@@ -17,6 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 
 export function CreateAnalysisDialog({
   register,
@@ -27,15 +29,25 @@ export function CreateAnalysisDialog({
   isOpen,
   setIsOpen,
   reset,
+  resumeName,
+  renameResume,
 }: Readonly<{
-  register: UseFormRegister<{ resume: FileList | null }>;
-  errors: FormState<{ resume: FileList | null }>["errors"];
+  register: UseFormRegister<{
+    resume: FileList | null;
+    resumeName?: string | null;
+  }>;
+  errors: FormState<{
+    resume: FileList | null;
+    resumeName?: string | null;
+  }>["errors"];
   handleSubmit: React.SubmitEventHandler<HTMLFormElement>;
   isSubmitting: boolean;
   buttonText?: string;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   reset: () => void;
+  resumeName?: string;
+  renameResume: () => void;
 }>) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -61,42 +73,54 @@ export function CreateAnalysisDialog({
             </DialogDescription>
           </DialogHeader>
           <Field className="flex flex-col gap-2">
-            <p className="text-xs text-muted-foreground">
-              Supported formats: PDF
-            </p>
-            <Button onClick={uploadHandler} disabled={isSubmitting}>
-              {isSubmitting ? "Uploading..." : "Upload Resume"}
-            </Button>
-            <input
-              type="file"
-              placeholder="Enter your resume here"
-              {...register("resume")}
-              className="invisible h-0 w-0 absolute"
-              accept=".pdf"
-              ref={(e) => {
-                register("resume").ref(e);
-                fileInputRef.current = e;
-              }}
-            />
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            {errors.resume && (
-              <p className="text-sm text-destructive">
-                {errors.resume.message}
-              </p>
+            {errors?.resume?.message ===
+            "Resume with this name already exists." ? (
+              <>
+                <Input
+                  placeholder="Enter a new name for your resume"
+                  {...register("resumeName")}
+                  defaultValue={resumeName ?? ""}
+                />
+                <p className="text-sm text-destructive">
+                  A resume with this name already exists. Please rename your
+                  file and try again.
+                </p>
+                <Button disabled={isSubmitting} onClick={renameResume}>
+                  {isSubmitting ? "Uploading..." : "Upload Resume"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Supported formats: PDF
+                </p>
+                <Button onClick={uploadHandler} disabled={isSubmitting}>
+                  {isSubmitting ? "Uploading..." : "Upload Resume"}
+                </Button>
+                <input
+                  type="file"
+                  placeholder="Enter your resume here"
+                  {...register("resume")}
+                  className="invisible h-0 w-0 absolute"
+                  accept=".pdf"
+                  ref={(e) => {
+                    register("resume").ref(e);
+                    fileInputRef.current = e;
+                  }}
+                />
+              </>
             )}
-          </Field>
-
-          {/* <DialogFooter className="pt-0">
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Analyzing..." : "Analyze"}
-            </Button>
-          </DialogFooter> */}
+            {errors?.resume &&
+              errors?.resume?.message !==
+                "Resume with this name already exists." && (
+                <p className="text-sm text-destructive">
+                  {errors?.resume?.message}
+                </p>
+              )}
+          </Field>
         </form>
       </DialogContent>
     </Dialog>

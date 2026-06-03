@@ -33,7 +33,25 @@ const ResumeSchema = z.object({
     .refine((files: FileList) => files[0]?.size < 5 * 1024 * 1024, {
       message: "File size must be less than 5MB.",
     })
+    .refine(
+      async (files: FileList) => {
+        const res = await fetch(
+          `/api/resume/check-name?resumeName=${files[0]?.name}`,
+        );
+        const { exists } = await res.json();
+        return !exists;
+      },
+      {
+        message: "Resume with this name already exists.",
+      },
+    )
     .nullable(),
+  resumeName: z
+    .string()
+    .max(50, { message: "New file name must be less than 50 characters." })
+    .trim()
+    .transform((val) => (val === "" ? undefined : val))
+    .optional(),
 });
 
 type ResumeFormData = z.infer<typeof ResumeSchema>;
@@ -84,11 +102,13 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
     watch,
     getValues,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ResumeFormData>({
     resolver: zodResolver(ResumeSchema),
     defaultValues: {
       resume: null,
+      resumeName: "",
     },
   });
 
@@ -111,45 +131,70 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
 
   useEffect(() => {
     const resume = getValues("resume")?.[0];
+    const resumeName = resume?.name;
 
-    if (watch("resume") && resume && !isSubmitting) {
+    setValue("resumeName", resumeName);
+
+    if (resume && !isSubmitting) {
       handleSubmit(onSubmit)();
     }
   }, [watch("resume")]);
 
+  const renameResumeFile = () => {
+    const resumeName = getValues("resumeName");
+    const resumeFile = getValues("resume")?.[0];
+    if (!resumeFile) return;
+
+    const newName = resumeName?.trim() || resumeFile.name;
+    const renamedFile = new File([resumeFile], newName, {
+      type: resumeFile.type,
+    });
+
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(renamedFile);
+
+    setValue("resume", dataTransfer.files, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+
+    handleSubmit(onSubmit)();
+  };
   const onSubmit: SubmitHandler<ResumeFormData> = async (_data) => {
     const resumeFile = _data.resume?.[0];
 
-    try {
-      const parsedResumeFile = await uploadResumeFile(resumeFile as File);
-      if (parsedResumeFile.success) {
-        const res = await fetch(`/api/analysis/${id}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ resume: parsedResumeFile.resume }),
-        });
-        const json = await res.json();
-        if (!res.ok) {
-          toast.error(json.message || "Failed to run analysis.");
-          console.error("Failed to run analysis");
-          return;
-        }
-        if (json.success) {
-          queryClient.invalidateQueries({ queryKey: ["analyses", id] });
-          toast.success(json.message || "Analysis created successfully!");
-          setIsOpen(false);
+    if (resumeFile) {
+      try {
+        const parsedResumeFile = await uploadResumeFile(resumeFile as File);
+        if (parsedResumeFile.success) {
+          const res = await fetch(`/api/analysis/${id}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ resume: parsedResumeFile.resume }),
+          });
+          const json = await res.json();
+          if (!res.ok) {
+            toast.error(json.message || "Failed to run analysis.");
+            console.error("Failed to run analysis");
+            return;
+          }
+          if (json.success) {
+            queryClient.invalidateQueries({ queryKey: ["analyses", id] });
+            toast.success(json.message || "Analysis created successfully!");
+            setIsOpen(false);
+          } else {
+            toast.error(json.message || "Failed to run analysis");
+          }
         } else {
-          toast.error(json.message || "Failed to run analysis");
+          toast.error(parsedResumeFile.error || "Failed to upload resume.");
         }
-      } else {
-        toast.error(parsedResumeFile.error || "Failed to upload resume.");
+      } catch (error) {
+        toast.error((error as Error).message || "Failed to upload resume.");
+        console.error("Failed to upload resume:", error);
+        return;
       }
-    } catch (error) {
-      toast.error((error as Error).message || "Failed to upload resume.");
-      console.error("Failed to upload resume:", error);
-      return;
     }
   };
 
@@ -171,6 +216,8 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
               setIsOpen={setIsOpen}
               buttonText="Re-run AI Analysis"
               reset={reset}
+              resumeName={getValues("resume")?.[0]?.name}
+              renameResume={renameResumeFile}
             />
           </div>
         </AnalysisPanel>
@@ -192,6 +239,8 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
           isOpen={isOpen}
           setIsOpen={setIsOpen}
           reset={reset}
+          resumeName={getValues("resume")?.[0]?.name}
+          renameResume={renameResumeFile}
         />
       </div>
     );
