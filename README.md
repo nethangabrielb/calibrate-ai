@@ -68,6 +68,8 @@ This project was built to:
 - [x] **Job Application Tracking** — Full CRUD for job applications with company, title, description, location, salary, and currency support
 - [x] **Application Status Management** — Track status across `APPLIED`, `INTERVIEWING`, `OFFERED`, and `REJECTED` stages
 - [x] **AI-Powered Resume Analysis** — Upload a PDF resume and get an instant AI-generated fit score, skill match/gap analysis, and personalized recommendations
+- [x] **AI-Powered Resume Analysis** — Upload a PDF resume and get an instant AI-generated fit score, skill match/gap analysis, and personalized recommendations
+- [x] **Resume Versioning & History** — Persist multiple uploaded resume versions per application, view a timeline of versions, compare any two versions side-by-side, and track score trends over time
 - [x] **Analytics Dashboard** — Overview cards (total applications, average AI score, active applications, offers), bar chart by status, and recent applications table
 - [x] **Search & Filter** — Global search across applications with column sorting (salary, date, AI score)
 - [x] **Paginated Data Table** — Powered by TanStack Table with 8 items per page, sorting, and global filtering
@@ -81,6 +83,19 @@ This project was built to:
 - [x] **Actionable Recommendations** — 4-sentence structured recommendation: fit verdict, strongest alignments, critical gap, and concrete next step
 - [x] **Re-run Analysis** — Run multiple analyses per application as you update your resume
 - [x] **Rate Limiting** — Upstash Redis sliding window rate limiter (**15 requests/hour per user**) to prevent AI API abuse
+
+## Resume Versioning & History
+
+Calibrate AI now supports resume versioning and a dedicated history experience for each job application. Key highlights:
+
+- **Timeline & Versions** — Each uploaded resume is persisted and appears as a version in a timeline view available at `/job-applications/[id]/history`.
+- **Compare Versions** — Choose any two versions to compare scores, matching/missing skills, and recommendations side-by-side via the Compare panel.
+- **Trend Visualization** — A score progression chart shows versions on the X axis and displays the resume name on hover for each data point; tooltips include the resume label.
+- **API Note** — The analyses GET route (`/api/analysis/:applicationId`) includes related resumes for building the history UI.
+- **Responsive Layout** — On tablet and smaller screens the history page stacks components as: Resume score progression → Compare versions → Resume timeline (desktop layout preserved on wide screens).
+- **Implementation** — Components live under `src/app/job-applications/[id]/history/components` with helpers in `src/lib/history.ts`.
+
+This feature turns Calibrate AI into a longitudinal coaching tool where you can iterate on your resume and track how changes impact your fit over time.
 
 ### Technical
 
@@ -107,45 +122,45 @@ This project was built to:
 
 ### Frontend
 
-| Technology | Purpose |
-|---|---|
-| [Next.js 16](https://nextjs.org/) | Full-stack React framework (App Router, RSC, Server Actions) |
-| [React 19](https://react.dev/) | UI library with Hooks, `useActionState`, `use()` |
-| [Tailwind CSS 4](https://tailwindcss.com/) | Utility-first CSS with custom teal-centric design tokens |
-| [shadcn/ui](https://ui.shadcn.com/) | Radix UI-based component library (New York style) |
-| [TanStack React Query](https://tanstack.com/query) | Async state management, caching, and cache invalidation |
-| [TanStack React Table](https://tanstack.com/table) | Headless table with sorting, filtering, pagination |
-| [React Hook Form](https://react-hook-form.com/) | Performant form handling with `@hookform/resolvers` |
-| [Recharts](https://recharts.org/) | Composable React charting (dashboard bar chart) |
-| [Framer Motion](https://www.framer.com/motion/) | Animation library (available for UI transitions) |
-| [Lucide React](https://lucide.dev/) | Icon library |
-| [Sonner](https://sonner.emilkowal.ski/) | Toast notification system |
-| [next-themes](https://github.com/pacocoursey/next-themes) | Theme management (dark/light mode) |
+| Technology                                                | Purpose                                                      |
+| --------------------------------------------------------- | ------------------------------------------------------------ |
+| [Next.js 16](https://nextjs.org/)                         | Full-stack React framework (App Router, RSC, Server Actions) |
+| [React 19](https://react.dev/)                            | UI library with Hooks, `useActionState`, `use()`             |
+| [Tailwind CSS 4](https://tailwindcss.com/)                | Utility-first CSS with custom teal-centric design tokens     |
+| [shadcn/ui](https://ui.shadcn.com/)                       | Radix UI-based component library (New York style)            |
+| [TanStack React Query](https://tanstack.com/query)        | Async state management, caching, and cache invalidation      |
+| [TanStack React Table](https://tanstack.com/table)        | Headless table with sorting, filtering, pagination           |
+| [React Hook Form](https://react-hook-form.com/)           | Performant form handling with `@hookform/resolvers`          |
+| [Recharts](https://recharts.org/)                         | Composable React charting (dashboard bar chart)              |
+| [Framer Motion](https://www.framer.com/motion/)           | Animation library (available for UI transitions)             |
+| [Lucide React](https://lucide.dev/)                       | Icon library                                                 |
+| [Sonner](https://sonner.emilkowal.ski/)                   | Toast notification system                                    |
+| [next-themes](https://github.com/pacocoursey/next-themes) | Theme management (dark/light mode)                           |
 
 ### Backend
 
-| Technology | Purpose |
-|---|---|
-| [Next.js 16 API Routes](https://nextjs.org/docs/app/building-your-application/routing/route-handlers) | REST API route handlers |
-| [Next.js Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) | Server-side form mutations |
-| [Vercel AI SDK](https://sdk.vercel.ai/) | AI model integration with structured output |
-| [Mistral AI](https://mistral.ai/) | LLM provider (`ministral-8b-latest` model) |
-| [Better Auth](https://www.better-auth.com/) | Authentication framework (email/password + OAuth) |
-| [Zod](https://zod.dev/) | Runtime schema validation and type inference |
-| [Upstash Rate Limit](https://upstash.com/) | Serverless Redis-based rate limiting (sliding window) |
-| [unpdf](https://www.npmjs.com/package/unpdf) | PDF resume text extraction |
-| [bcryptjs](https://www.npmjs.com/package/bcryptjs) | Password hashing |
-| [jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken) | JWT token utilities |
+| Technology                                                                                                                 | Purpose                                               |
+| -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| [Next.js 16 API Routes](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)                      | REST API route handlers                               |
+| [Next.js Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) | Server-side form mutations                            |
+| [Vercel AI SDK](https://sdk.vercel.ai/)                                                                                    | AI model integration with structured output           |
+| [Mistral AI](https://mistral.ai/)                                                                                          | LLM provider (`ministral-8b-latest` model)            |
+| [Better Auth](https://www.better-auth.com/)                                                                                | Authentication framework (email/password + OAuth)     |
+| [Zod](https://zod.dev/)                                                                                                    | Runtime schema validation and type inference          |
+| [Upstash Rate Limit](https://upstash.com/)                                                                                 | Serverless Redis-based rate limiting (sliding window) |
+| [unpdf](https://www.npmjs.com/package/unpdf)                                                                               | PDF resume text extraction                            |
+| [bcryptjs](https://www.npmjs.com/package/bcryptjs)                                                                         | Password hashing                                      |
+| [jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken)                                                                 | JWT token utilities                                   |
 
 ### Database & Infrastructure
 
-| Technology | Purpose |
-|---|---|
-| [PostgreSQL](https://www.postgresql.org/) | Primary relational database |
-| [Prisma 7](https://www.prisma.io/) | ORM with PostgreSQL driver adapter (`@prisma/adapter-pg`) |
-| [Upstash Redis](https://upstash.com/) | Serverless Redis for rate limiting & analytics |
-| [Turbopack](https://turbo.build/pack) | Next.js bundler for development (`next dev --turbopack`) |
-| [@faker-js/faker](https://fakerjs.dev/) | Database seeding with realistic test data |
+| Technology                                | Purpose                                                   |
+| ----------------------------------------- | --------------------------------------------------------- |
+| [PostgreSQL](https://www.postgresql.org/) | Primary relational database                               |
+| [Prisma 7](https://www.prisma.io/)        | ORM with PostgreSQL driver adapter (`@prisma/adapter-pg`) |
+| [Upstash Redis](https://upstash.com/)     | Serverless Redis for rate limiting & analytics            |
+| [Turbopack](https://turbo.build/pack)     | Next.js bundler for development (`next dev --turbopack`)  |
+| [@faker-js/faker](https://fakerjs.dev/)   | Database seeding with realistic test data                 |
 
 ---
 
@@ -427,35 +442,35 @@ All protected routes use session-based authentication via Better Auth. The `isUs
 
 Better Auth handles all auth endpoints automatically through the catch-all route:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/auth/sign-up/email` | Register with email & password |
-| `POST` | `/api/auth/sign-in/email` | Login with email & password |
-| `POST` | `/api/auth/sign-out` | End session |
-| `GET` | `/api/auth/get-session` | Get current session |
-| `GET` | `/api/auth/sign-in/social` | Initiate Google OAuth flow |
-| `GET` | `/api/auth/callback/google` | Google OAuth callback |
+| Method | Endpoint                    | Description                    |
+| ------ | --------------------------- | ------------------------------ |
+| `POST` | `/api/auth/sign-up/email`   | Register with email & password |
+| `POST` | `/api/auth/sign-in/email`   | Login with email & password    |
+| `POST` | `/api/auth/sign-out`        | End session                    |
+| `GET`  | `/api/auth/get-session`     | Get current session            |
+| `GET`  | `/api/auth/sign-in/social`  | Initiate Google OAuth flow     |
+| `GET`  | `/api/auth/callback/google` | Google OAuth callback          |
 
 ### Applications
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `GET` | `/api/applications` | List all user applications (ordered by `createdAt DESC`, includes latest analysis score) | ✅ |
-| `GET` | `/api/applications/:id` | Get a single application with analysis scores | ✅ |
+| Method | Endpoint                | Description                                                                              | Auth |
+| ------ | ----------------------- | ---------------------------------------------------------------------------------------- | ---- |
+| `GET`  | `/api/applications`     | List all user applications (ordered by `createdAt DESC`, includes latest analysis score) | ✅   |
+| `GET`  | `/api/applications/:id` | Get a single application with analysis scores                                            | ✅   |
 
 **Server Actions** (form-based mutations):
 
-| Action | File | Description |
-|--------|------|-------------|
-| `createApplication` | `src/actions/application.ts` | Create a new job application (Zod-validated) |
+| Action              | File                         | Description                                      |
+| ------------------- | ---------------------------- | ------------------------------------------------ |
+| `createApplication` | `src/actions/application.ts` | Create a new job application (Zod-validated)     |
 | `updateApplication` | `src/actions/application.ts` | Update an existing application (ownership check) |
-| `deleteApplication` | `src/actions/application.ts` | Delete application + cascade delete analyses |
+| `deleteApplication` | `src/actions/application.ts` | Delete application + cascade delete analyses     |
 
 ### Resume Upload / Parsing
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `POST` | `/api/resume` | Upload a **PDF** resume and extract plain text for analysis | ✅ |
+| Method | Endpoint      | Description                                                 | Auth |
+| ------ | ------------- | ----------------------------------------------------------- | ---- |
+| `POST` | `/api/resume` | Upload a **PDF** resume and extract plain text for analysis | ✅   |
 
 **POST Request (multipart/form-data):**
 
@@ -469,10 +484,10 @@ Better Auth handles all auth endpoints automatically through the catch-all route
 
 ### AI Analysis
 
-| Method | Endpoint | Description | Auth | Rate Limited |
-|--------|----------|-------------|------|--------------|
-| `GET` | `/api/analysis/:applicationId` | Get all analyses for an application (ordered by `createdAt DESC`) | ✅ + ownership | No |
-| `POST` | `/api/analysis/:applicationId` | Run AI analysis (resume vs job description) | ✅ + ownership | ✅ 15 req/hr |
+| Method | Endpoint                       | Description                                                       | Auth           | Rate Limited |
+| ------ | ------------------------------ | ----------------------------------------------------------------- | -------------- | ------------ |
+| `GET`  | `/api/analysis/:applicationId` | Get all analyses for an application (ordered by `createdAt DESC`) | ✅ + ownership | No           |
+| `POST` | `/api/analysis/:applicationId` | Run AI analysis (resume vs job description)                       | ✅ + ownership | ✅ 15 req/hr |
 
 **POST Request Body:**
 
@@ -492,7 +507,13 @@ Better Auth handles all auth endpoints automatically through the catch-all route
     "id": 1,
     "jobId": 42,
     "score": 72,
-    "matchingSkills": ["React", "TypeScript", "Node.js", "PostgreSQL", "REST APIs"],
+    "matchingSkills": [
+      "React",
+      "TypeScript",
+      "Node.js",
+      "PostgreSQL",
+      "REST APIs"
+    ],
     "missingSkills": ["Kubernetes", "GraphQL", "Redis/caching"],
     "recommendation": "Moderate fit at 72%. Lead with your strong React/TypeScript stack...",
     "createdAt": "2026-04-14T10:30:00.000Z"
@@ -513,9 +534,9 @@ Rate limit headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-R
 
 ### Dashboard
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `GET` | `/api/dashboard` | Aggregated dashboard data | ✅ |
+| Method | Endpoint         | Description               | Auth |
+| ------ | ---------------- | ------------------------- | ---- |
+| `GET`  | `/api/dashboard` | Aggregated dashboard data | ✅   |
 
 **Response:**
 
@@ -533,7 +554,9 @@ Rate limit headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-R
       { "status": "OFFERED", "_count": { "_all": 3 } },
       { "status": "REJECTED", "_count": { "_all": 4 } }
     ],
-    "recentApplications": [/* 5 most recent jobs */]
+    "recentApplications": [
+      /* 5 most recent jobs */
+    ]
   }
 }
 ```
@@ -627,23 +650,23 @@ erDiagram
 
 ### Core Models
 
-| Model | Key Fields | Description |
-|-------|-----------|-------------|
-| `User` | id, email, name, password, image, emailVerified | User accounts (Better Auth managed) |
-| `Job` | id, userId, company, title, description, location, salary, salaryCurrency, status | Job applications with status tracking |
-| `Analysis` | id, jobId, score, matchingSkills[], missingSkills[], recommendation | AI-generated resume-vs-job analysis |
-| `Session` | id, token, userId, expiresAt, ipAddress, userAgent | Active user sessions |
-| `Account` | id, userId, providerId, accountId, accessToken | OAuth provider accounts (Google) |
-| `Verification` | id, identifier, value, expiresAt | Email verification tokens |
+| Model          | Key Fields                                                                        | Description                           |
+| -------------- | --------------------------------------------------------------------------------- | ------------------------------------- |
+| `User`         | id, email, name, password, image, emailVerified                                   | User accounts (Better Auth managed)   |
+| `Job`          | id, userId, company, title, description, location, salary, salaryCurrency, status | Job applications with status tracking |
+| `Analysis`     | id, jobId, score, matchingSkills[], missingSkills[], recommendation               | AI-generated resume-vs-job analysis   |
+| `Session`      | id, token, userId, expiresAt, ipAddress, userAgent                                | Active user sessions                  |
+| `Account`      | id, userId, providerId, accountId, accessToken                                    | OAuth provider accounts (Google)      |
+| `Verification` | id, identifier, value, expiresAt                                                  | Email verification tokens             |
 
 ### Enum: `JobStatus`
 
-| Value | Description |
-|-------|-------------|
-| `APPLIED` | Application submitted |
+| Value          | Description               |
+| -------------- | ------------------------- |
+| `APPLIED`      | Application submitted     |
 | `INTERVIEWING` | Interview process ongoing |
-| `OFFERED` | Received an offer |
-| `REJECTED` | Application rejected |
+| `OFFERED`      | Received an offer         |
+| `REJECTED`     | Application rejected      |
 
 ---
 
@@ -669,24 +692,24 @@ User → Upload PDF Resume → POST /api/resume
 
 ### AI Model Configuration
 
-| Setting | Value |
-|---------|-------|
-| **Provider** | Mistral AI via `@ai-sdk/mistral` |
-| **Model** | `ministral-8b-latest` |
-| **Output Mode** | Structured object (`Output.object()`) |
-| **Schema Enforcement** | `strictJsonSchema: true` |
-| **Output Schema** | Zod-validated (score, matchingSkills, missingSkills, recommendation) |
+| Setting                | Value                                                                |
+| ---------------------- | -------------------------------------------------------------------- |
+| **Provider**           | Mistral AI via `@ai-sdk/mistral`                                     |
+| **Model**              | `ministral-8b-latest`                                                |
+| **Output Mode**        | Structured object (`Output.object()`)                                |
+| **Schema Enforcement** | `strictJsonSchema: true`                                             |
+| **Output Schema**      | Zod-validated (score, matchingSkills, missingSkills, recommendation) |
 
 ### Scoring Rubric
 
 The AI uses a strict 4-tier calibration rubric embedded in the prompt:
 
-| Score Range | Label | Criteria |
-|-------------|-------|----------|
-| **80–100** | Strong Fit | Meets most required and preferred qualifications |
-| **60–79** | Moderate Fit | Core skills align but meaningful gaps exist |
-| **40–59** | Partial Fit | Transferable experience but significant skill gaps |
-| **0–39** | Weak Fit | Fundamental misalignment in skills, experience, or domain |
+| Score Range | Label        | Criteria                                                  |
+| ----------- | ------------ | --------------------------------------------------------- |
+| **80–100**  | Strong Fit   | Meets most required and preferred qualifications          |
+| **60–79**   | Moderate Fit | Core skills align but meaningful gaps exist               |
+| **40–59**   | Partial Fit  | Transferable experience but significant skill gaps        |
+| **0–39**    | Weak Fit     | Fundamental misalignment in skills, experience, or domain |
 
 ### Prompt Engineering Highlights
 
@@ -751,6 +774,7 @@ Client ──────────── │   │ Email/ │  │  Google   
 ### Authorization
 
 Every API endpoint and Server Action performs:
+
 1. **Authentication check** — Verify active session
 2. **Ownership check** — Verify `job.userId === user.id` before any read/write operation
 
@@ -760,15 +784,15 @@ Every API endpoint and Server Action performs:
 
 ### Key Design Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| **Server Actions for mutations** | Co-located form handling with automatic revalidation, progressive enhancement, and `useActionState` integration |
-| **API Routes for reads** | React Query needs HTTP endpoints for client-side fetching, caching, and background refetching |
-| **Prisma PG adapter** | Direct PostgreSQL driver connection instead of Prisma's query engine, reducing cold start overhead |
-| **Zod schemas as source of truth** | Single schema definition generates both runtime validation and TypeScript types (`z.infer<>`) |
-| **shadcn/ui (New York)** | Copy-paste component ownership — full control over UI primitives without dependency lock-in |
-| **OKLCH color system** | Perceptually uniform color space for consistent design tokens across light/dark mode |
-| **Separate `/orm/generated/`** | Prisma Client output isolated from source, gitignored, and generated at build time |
+| Decision                           | Rationale                                                                                                       |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Server Actions for mutations**   | Co-located form handling with automatic revalidation, progressive enhancement, and `useActionState` integration |
+| **API Routes for reads**           | React Query needs HTTP endpoints for client-side fetching, caching, and background refetching                   |
+| **Prisma PG adapter**              | Direct PostgreSQL driver connection instead of Prisma's query engine, reducing cold start overhead              |
+| **Zod schemas as source of truth** | Single schema definition generates both runtime validation and TypeScript types (`z.infer<>`)                   |
+| **shadcn/ui (New York)**           | Copy-paste component ownership — full control over UI primitives without dependency lock-in                     |
+| **OKLCH color system**             | Perceptually uniform color space for consistent design tokens across light/dark mode                            |
+| **Separate `/orm/generated/`**     | Prisma Client output isolated from source, gitignored, and generated at build time                              |
 
 ### Design System
 
@@ -784,22 +808,22 @@ The application uses a custom teal-centric design system defined in `globals.css
 
 ## Roadmap
 
-| Status | Feature |
-|--------|---------|
-| ✅ Done | Core job application CRUD with status tracking |
-| ✅ Done | AI-powered resume analysis (Mistral + Vercel AI SDK) |
-| ✅ Done | Analytics dashboard with charts and stats |
-| ✅ Done | Email/password + Google OAuth authentication |
-| ✅ Done | Rate-limited AI analysis (Upstash Redis) |
-| ✅ Done | Responsive sidebar with mobile sheet |
-| ✅ Done | TanStack Table with sorting, filtering, pagination |
-| ✅ Done | PDF resume upload + parsing |
-| 📋 Planned | Bulk CSV import for applications |
-| 📋 Planned | Application timeline / activity log |
-| 📋 Planned | Email notifications for status changes |
-| 💡 Considering | Browser extension for one-click job capture |
-| 💡 Considering | Interview prep assistant (AI-generated questions) |
-| 💡 Considering | Salary benchmarking against market data |
+| Status         | Feature                                              |
+| -------------- | ---------------------------------------------------- |
+| ✅ Done        | Core job application CRUD with status tracking       |
+| ✅ Done        | AI-powered resume analysis (Mistral + Vercel AI SDK) |
+| ✅ Done        | Analytics dashboard with charts and stats            |
+| ✅ Done        | Email/password + Google OAuth authentication         |
+| ✅ Done        | Rate-limited AI analysis (Upstash Redis)             |
+| ✅ Done        | Responsive sidebar with mobile sheet                 |
+| ✅ Done        | TanStack Table with sorting, filtering, pagination   |
+| ✅ Done        | PDF resume upload + parsing                          |
+| 📋 Planned     | Bulk CSV import for applications                     |
+| 📋 Planned     | Application timeline / activity log                  |
+| 📋 Planned     | Email notifications for status changes               |
+| 💡 Considering | Browser extension for one-click job capture          |
+| 💡 Considering | Interview prep assistant (AI-generated questions)    |
+| 💡 Considering | Salary benchmarking against market data              |
 
 See all open issues: [GitHub Issues →](https://github.com/nethangabrielb/calibrate/issues)
 
