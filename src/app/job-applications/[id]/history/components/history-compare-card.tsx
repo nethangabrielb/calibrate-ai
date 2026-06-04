@@ -47,7 +47,7 @@ export const HistoryCompareCard = ({
           </p>
         </div>
       </div>
-      <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+      <div className="rounded-lg border border-border/60 bg-muted/20 p-3 mt-2">
         <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
           AI Recommendation
         </p>
