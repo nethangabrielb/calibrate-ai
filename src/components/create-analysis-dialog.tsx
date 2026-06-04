@@ -46,7 +46,7 @@ export function CreateAnalysisDialog({
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   reset: () => void;
-  resumeName?: string;
+  resumeName?: string | null;
   renameResume: () => void;
 }>) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
