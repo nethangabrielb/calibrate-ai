@@ -49,6 +49,7 @@ export const GET = async (
   try {
     const analyses = await prisma.analysis.findMany({
       where: { jobId: Number(applicationId) },
+      include: { resumes: true },
       orderBy: { createdAt: "desc" },
     });
 

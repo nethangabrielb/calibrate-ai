@@ -6,5 +6,5 @@ export const ResumeSchema = z.object({
   userId: z.number(),
   analysisId: z.number().nullable(),
   content: z.string(),
-  createdAt: z.string(),
+  createdAt: z.date(),
 });
