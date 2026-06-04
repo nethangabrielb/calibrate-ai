@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   HistoryAnalysis,
-  buildHistoryTrendData,
   buildHistoryVersions,
   getComparisonPairFromVersion,
   getDefaultCompareVersionIds,
@@ -33,8 +32,6 @@ export const HistoryPage = ({
     () => buildHistoryVersions(analyses as HistoryAnalysis[]),
     [analyses],
   );
-
-  const trendData = useMemo(() => buildHistoryTrendData(versions), [versions]);
 
   const [leftVersionId, setLeftVersionId] = useState<string>("");
   const [rightVersionId, setRightVersionId] = useState<string>("");
@@ -89,21 +86,25 @@ export const HistoryPage = ({
 
       <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="flex flex-col gap-4">
-          <HistoryTrendCard versions={versions} trendData={trendData} />
+          <HistoryTrendCard versions={versions} />
+        </div>
 
+        <div className="xl:col-start-2 xl:row-start-1 xl:row-span-2">
+          <HistoryComparePanel
+            versions={versions}
+            leftVersionId={leftVersionId}
+            rightVersionId={rightVersionId}
+            onLeftVersionIdChange={setLeftVersionId}
+            onRightVersionIdChange={setRightVersionId}
+          />
+        </div>
+
+        <div className="flex flex-col gap-4">
           <HistoryTimeline
             versions={versions}
             onCompareFromHere={handleCompareFromHere}
           />
         </div>
-
-        <HistoryComparePanel
-          versions={versions}
-          leftVersionId={leftVersionId}
-          rightVersionId={rightVersionId}
-          onLeftVersionIdChange={setLeftVersionId}
-          onRightVersionIdChange={setRightVersionId}
-        />
       </div>
     </>
   );
