@@ -46,48 +46,6 @@ export const HistoryCompareCard = ({
             {version.uploadedAtLabel}
           </p>
         </div>
-
-        <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
-          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-            Matching skills
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {version.matchingSkills.slice(0, 4).map((skill) => (
-              <span
-                key={`${label}-match-${skill}`}
-                className={cn(
-                  "rounded-full border px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap",
-                  skillStyles.match,
-                )}
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
-          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-            Missing skills
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {version.missingSkills.slice(0, 4).map((skill) => (
-              <span
-                key={`${label}-miss-${skill}`}
-                className={cn(
-                  "rounded-full border px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap",
-                  skillStyles.miss,
-                )}
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <p className="text-sm leading-6 text-muted-foreground">
-          {version.recommendation}
-        </p>
       </div>
     </div>
   );
