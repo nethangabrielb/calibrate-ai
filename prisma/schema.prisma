@@ -52,14 +52,18 @@ model Analysis {
   missingSkills  String[]
   recommendation String
   createdAt      DateTime @default(now())
+  resumes        Resume[]
 }
 
 model Resume {
-  id        Int      @id @default(autoincrement())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  content   String
-  createdAt DateTime @default(now())
+  id         Int       @id @default(autoincrement())
+  analysisId Int?
+  analysis   Analysis? @relation(fields: [analysisId], references: [id])
+  name       String
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  content    String
+  createdAt  DateTime  @default(now())
 }
 
 enum JobStatus {

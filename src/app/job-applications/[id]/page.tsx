@@ -13,8 +13,10 @@ import z from "zod";
 import { use, useEffect, useState } from "react";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { CreateAnalysisDialog } from "@/components/create-analysis-dialog";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 import { formatDate } from "@/lib/data";
@@ -33,12 +35,31 @@ const ResumeSchema = z.object({
     .refine((files: FileList) => files[0]?.size < 5 * 1024 * 1024, {
       message: "File size must be less than 5MB.",
     })
+    .refine(
+      async (files: FileList) => {
+        const res = await fetch(
+          `/api/resume/check-name?resumeName=${files[0]?.name}`,
+        );
+        const { exists } = await res.json();
+        return !exists;
+      },
+      {
+        message: "Resume with this name already exists.",
+      },
+    )
     .nullable(),
+  resumeName: z
+    .string()
+    .max(50, { message: "New file name must be less than 50 characters." })
+    .trim()
+    .transform((val) => (val === "" ? undefined : val))
+    .optional(),
 });
 
 type ResumeFormData = z.infer<typeof ResumeSchema>;
 
 const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
   const { id } = use(params);
@@ -78,17 +99,21 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
     enabled: !!id,
   });
 
+  console.log(analyses);
+
   const {
     register,
     handleSubmit,
     watch,
     getValues,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ResumeFormData>({
     resolver: zodResolver(ResumeSchema),
     defaultValues: {
       resume: null,
+      resumeName: "",
     },
   });
 
@@ -111,45 +136,70 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
 
   useEffect(() => {
     const resume = getValues("resume")?.[0];
+    const resumeName = resume?.name;
 
-    if (watch("resume") && resume && !isSubmitting) {
+    setValue("resumeName", resumeName);
+
+    if (resume && !isSubmitting) {
       handleSubmit(onSubmit)();
     }
   }, [watch("resume")]);
 
+  const renameResumeFile = () => {
+    const resumeName = getValues("resumeName");
+    const resumeFile = getValues("resume")?.[0];
+    if (!resumeFile) return;
+
+    const newName = resumeName?.trim() || resumeFile.name;
+    const renamedFile = new File([resumeFile], newName, {
+      type: resumeFile.type,
+    });
+
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(renamedFile);
+
+    setValue("resume", dataTransfer.files, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+
+    handleSubmit(onSubmit)();
+  };
   const onSubmit: SubmitHandler<ResumeFormData> = async (_data) => {
     const resumeFile = _data.resume?.[0];
 
-    try {
-      const parsedResumeFile = await uploadResumeFile(resumeFile as File);
-      if (parsedResumeFile.success) {
-        const res = await fetch(`/api/analysis/${id}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ resume: parsedResumeFile.resume }),
-        });
-        const json = await res.json();
-        if (!res.ok) {
-          toast.error(json.message || "Failed to run analysis.");
-          console.error("Failed to run analysis");
-          return;
-        }
-        if (json.success) {
-          queryClient.invalidateQueries({ queryKey: ["analyses", id] });
-          toast.success(json.message || "Analysis created successfully!");
-          setIsOpen(false);
+    if (resumeFile) {
+      try {
+        const parsedResumeFile = await uploadResumeFile(resumeFile as File);
+        if (parsedResumeFile.success) {
+          const res = await fetch(`/api/analysis/${id}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ resume: parsedResumeFile.resume }),
+          });
+          const json = await res.json();
+          if (!res.ok) {
+            toast.error(json.message || "Failed to run analysis.");
+            console.error("Failed to run analysis");
+            return;
+          }
+          if (json.success) {
+            queryClient.invalidateQueries({ queryKey: ["analyses", id] });
+            toast.success(json.message || "Analysis created successfully!");
+            setIsOpen(false);
+          } else {
+            toast.error(json.message || "Failed to run analysis");
+          }
         } else {
-          toast.error(json.message || "Failed to run analysis");
+          toast.error(parsedResumeFile.error || "Failed to upload resume.");
         }
-      } else {
-        toast.error(parsedResumeFile.error || "Failed to upload resume.");
+      } catch (error) {
+        toast.error((error as Error).message || "Failed to upload resume.");
+        console.error("Failed to upload resume:", error);
+        return;
       }
-    } catch (error) {
-      toast.error((error as Error).message || "Failed to upload resume.");
-      console.error("Failed to upload resume:", error);
-      return;
     }
   };
 
@@ -160,20 +210,31 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
 
     if (analyses && analyses?.data?.length > 0) {
       return (
-        <AnalysisPanel analysis={analyses?.data?.[0]}>
-          <div className="flex flex-col items-center justify-center gap-3 px-5 py-3">
-            <CreateAnalysisDialog
-              register={register}
-              errors={errors}
-              handleSubmit={handleSubmit(onSubmit)}
-              isSubmitting={isSubmitting}
-              isOpen={isOpen}
-              setIsOpen={setIsOpen}
-              buttonText="Re-run AI Analysis"
-              reset={reset}
-            />
-          </div>
-        </AnalysisPanel>
+        <>
+          <AnalysisPanel analysis={analyses?.data?.[0]}>
+            <div className="flex items-center justify-center gap-3 px-5 py-3">
+              <Button
+                className="w-fit cursor-pointer"
+                variant="outline"
+                onClick={() => router.push(`/job-applications/${id}/history`)}
+              >
+                View Analysis History
+              </Button>
+              <CreateAnalysisDialog
+                register={register}
+                errors={errors}
+                handleSubmit={handleSubmit(onSubmit)}
+                isSubmitting={isSubmitting}
+                isOpen={isOpen}
+                setIsOpen={setIsOpen}
+                buttonText="Re-run AI Analysis"
+                reset={reset}
+                resumeName={getValues("resume")?.[0]?.name}
+                renameResume={renameResumeFile}
+              />
+            </div>
+          </AnalysisPanel>
+        </>
       );
     }
 
@@ -192,6 +253,8 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
           isOpen={isOpen}
           setIsOpen={setIsOpen}
           reset={reset}
+          resumeName={getValues("resume")?.[0]?.name}
+          renameResume={renameResumeFile}
         />
       </div>
     );
@@ -266,23 +329,27 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
       )}
 
       {/* AI Analysis Section */}
-      <div className="flex w-full min-h-0 flex-col gap-4 rounded-2xl border border-border bg-card p-4 shadow-lg backdrop-blur-sm sm:p-6 xl:w-7/12">
+      <div className="flex w-full min-h-0 flex-col gap-4 rounded-2xl border border-border bg-card p-4 shadow-lg backdrop-blur-sm sm:p-6 xl:h-[calc(100vh-2rem)] xl:w-7/12 xl:overflow-hidden">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <h1 className="text-xl font-medium tracking-tight sm:text-2xl">
             AI Analysis
           </h1>
-          <Link
-            href="/job-applications"
-            className="group inline-flex w-fit items-center gap-1 text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
-          >
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-            <span className="select-none leading-none">
-              Back to applications
-            </span>
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/job-applications"
+              className="group inline-flex w-fit items-center gap-1 text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+            >
+              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+              <span className="select-none leading-none">
+                Back to applications
+              </span>
+            </Link>
+          </div>
         </header>
 
-        {analysisContent}
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
+          {analysisContent}
+        </div>
       </div>
     </div>
   );

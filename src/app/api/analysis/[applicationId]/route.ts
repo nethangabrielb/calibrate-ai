@@ -8,6 +8,8 @@ import { isUserAuthenticated } from "@/lib/isAuthenticated";
 import prisma from "@/lib/prisma";
 import { ratelimit } from "@/lib/rateLimit";
 
+import { Resume } from "@/types/resume";
+
 export const GET = async (
   _request: NextRequest,
   { params }: { params: Promise<{ applicationId: string }> },
@@ -47,6 +49,7 @@ export const GET = async (
   try {
     const analyses = await prisma.analysis.findMany({
       where: { jobId: Number(applicationId) },
+      include: { resumes: true },
       orderBy: { createdAt: "desc" },
     });
 
@@ -113,9 +116,37 @@ export const POST = async (
     );
   }
 
-  const resume = await request.json().then((body) => body.resume);
+  const resume = (await request
+    .json()
+    .then((body) => body.resume)) as Resume | null;
 
-  if (typeof resume !== "string" || resume.trim().length < 10) {
+  if (!resume) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Resume not provided",
+        message: "You must provide a resume for analysis.",
+      },
+      { status: 400 },
+    );
+  }
+
+  if (resume && resume.userId !== user.id) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Unauthorized resume",
+        message:
+          "The provided resume does not belong to the authenticated user.",
+      },
+      { status: 401 },
+    );
+  }
+
+  if (
+    resume &&
+    (typeof resume.content !== "string" || resume.content.trim().length < 10)
+  ) {
     return NextResponse.json(
       {
         success: false,
@@ -179,7 +210,7 @@ export const POST = async (
       </job_description>
 
       <resume>
-      ${resume}
+      ${resume?.content}
       </resume>
 
       Instructions:
@@ -209,36 +240,65 @@ export const POST = async (
     });
 
     // 5. Persist generated analysis into `prisma.analysis.create(...)`.
-    const analysis = await prisma.analysis.create({
-      data: {
-        jobId: application.id,
-        score: output.score,
-        matchingSkills: output.matchingSkills,
-        missingSkills: output.missingSkills,
-        recommendation: output.recommendation,
-      },
-    });
+    try {
+      const analysis = await prisma.analysis.create({
+        data: {
+          jobId: application.id,
+          score: output.score,
+          matchingSkills: output.matchingSkills,
+          missingSkills: output.missingSkills,
+          recommendation: output.recommendation,
+          resumes: { connect: { id: resume.id } },
+        },
+      });
 
-    if (!analysis) {
+      if (!analysis) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "There was an issue analyzing the job application. Please try again later.",
+          },
+          { status: 400 },
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Application has been successfully analyzed!",
+          analysis,
+        },
+        { status: 201 },
+      );
+    } catch (error) {
+      try {
+        await prisma.resume.delete({ where: { id: resume?.id } }); // cleanup resume if saving analysis fails
+      } catch (cleanupError) {
+        console.error(
+          "Failed to cleanup resume after analysis save failure:",
+          cleanupError,
+        );
+      }
       return NextResponse.json(
         {
           success: false,
+          error,
           message:
-            "There was an issue analyzing the job application. Please try again later.",
+            "There was an issue saving the analysis. Please try again later.",
         },
-        { status: 400 },
+        { status: 500 },
       );
     }
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Application has been successfully analyzed!",
-        analysis,
-      },
-      { status: 201 },
-    );
   } catch (error) {
+    try {
+      await prisma.resume.delete({ where: { id: resume?.id } }); // cleanup resume if analysis generation fails
+    } catch (cleanupError) {
+      console.error(
+        "Failed to cleanup resume after analysis generation failure:",
+        cleanupError,
+      );
+    }
     return NextResponse.json(
       {
         success: false,
