@@ -99,8 +99,6 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
     enabled: !!id,
   });
 
-  console.log(analyses);
-
   const {
     register,
     handleSubmit,
