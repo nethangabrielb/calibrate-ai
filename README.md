@@ -89,7 +89,7 @@ This project was built to:
 Calibrate AI now supports resume versioning and a dedicated history experience for each job application. Key highlights:
 
 - **Timeline & Versions** — Each uploaded resume is persisted and appears as a version in a timeline view available at `/job-applications/[id]/history`.
-- **Compare Versions** — Choose any two versions to compare scores, matching/missing skills, and recommendations side-by-side via the Compare panel.
+- **Compare Versions** — Choose any two versions to compare scores and recommendations side-by-side via the Compare panel.
 - **Trend Visualization** — A score progression chart shows versions on the X axis and displays the resume name on hover for each data point; tooltips include the resume label.
 - **API Note** — The analyses GET route (`/api/analysis/:applicationId`) includes related resumes for building the history UI.
 - **Responsive Layout** — On tablet and smaller screens the history page stacks components as: Resume score progression → Compare versions → Resume timeline (desktop layout preserved on wide screens).
@@ -112,8 +112,8 @@ This feature turns Calibrate AI into a longitudinal coaching tool where you can 
 
 ### Upcoming
 - [x] Resume upload (PDF parsing)
-- [x] Resume versioning + analysis history (currently working)
-- [ ] AI resume rewriter / optimizer
+- [x] Resume versioning + analysis history
+- [ ] AI resume rewriter / optimizer  (currently working)
 - [ ] Interview preparation system
 - [ ] Analytics intelligence
 - [ ] Real-time notifications + background jobs
