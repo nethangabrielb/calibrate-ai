@@ -67,12 +67,6 @@ export const HistoryPageHeader = ({
             Back to analysis
           </Button>
         </Link>
-        <Link
-          href={applicationsHref}
-          className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
-        >
-          Back to applications
-        </Link>
       </div>
     </section>
   );

@@ -336,12 +336,6 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
           </h1>
           <div className="flex flex-wrap items-center gap-3">
             <Link
-              href={`/job-applications/${id}/history`}
-              className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
-            >
-              <span className="select-none leading-none">View history</span>
-            </Link>
-            <Link
               href="/job-applications"
               className="group inline-flex w-fit items-center gap-1 text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
             >
