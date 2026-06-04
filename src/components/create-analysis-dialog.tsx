@@ -34,11 +34,11 @@ export function CreateAnalysisDialog({
 }: Readonly<{
   register: UseFormRegister<{
     resume: FileList | null;
-    resumeName?: string | null;
+    resumeName?: string;
   }>;
   errors: FormState<{
     resume: FileList | null;
-    resumeName?: string | null;
+    resumeName?: string;
   }>["errors"];
   handleSubmit: React.SubmitEventHandler<HTMLFormElement>;
   isSubmitting: boolean;
@@ -46,7 +46,7 @@ export function CreateAnalysisDialog({
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   reset: () => void;
-  resumeName?: string | null;
+  resumeName?: string;
   renameResume: () => void;
 }>) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
