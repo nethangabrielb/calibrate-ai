@@ -68,7 +68,7 @@ export const GET = async (
     return NextResponse.json(
       {
         success: false,
-        error: error,
+        error: error instanceof Error ? error.message : String(error),
         message: "An error occurred while fetching analyses.",
       },
       { status: 500 },
