@@ -1,20 +1,14 @@
 "use client";
 
-import { AnalysisHistory } from "@/app/job-applications/components/analysis-history";
-import JobApplicationSkeleton from "@/app/job-applications/components/job-application-skeleton";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, History } from "lucide-react";
 
 import { use } from "react";
 
-import Link from "next/link";
-
-import { Button } from "@/components/ui/button";
-
-import { formatDate } from "@/lib/data";
-
 import { Analysis } from "@/types/analysis";
 import { Application } from "@/types/application";
+
+import { HistoryPage } from "./components/history-page";
+import { HistoryPageSkeleton } from "./components/history-page-skeleton";
 
 const JobApplicationHistoryPage = ({
   params,
@@ -63,41 +57,13 @@ const JobApplicationHistoryPage = ({
   return (
     <div className="flex min-h-screen w-full min-w-0 flex-col gap-6 bg-background px-4 py-4 text-foreground sm:px-6 lg:px-8">
       {isLoading ? (
-        <JobApplicationSkeleton />
+        <HistoryPageSkeleton />
       ) : (
-        <>
-          <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6">
-            <div className="flex flex-col gap-2">
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border/70 bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
-                <History className="h-3.5 w-3.5" />
-                Resume history
-              </div>
-              <h1 className="text-2xl font-medium tracking-tight sm:text-3xl">
-                {application?.title ?? "Job Application History"}
-              </h1>
-              <p className="max-w-2xl text-sm text-muted-foreground">
-                Review the full analysis trail for this application and compare
-                how the resume evolved over time.
-              </p>
-              {application?.createdAt && (
-                <p className="text-xs text-muted-foreground">
-                  Applied on {formatDate(application.createdAt)}
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2 sm:items-end">
-              <Link href={`/job-applications/${id}`}>
-                <Button variant="outline" className="w-fit gap-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  Back to analysis
-                </Button>
-              </Link>
-            </div>
-          </section>
-
-          <AnalysisHistory analyses={analyses?.data ?? []} />
-        </>
+        <HistoryPage
+          application={application as Application}
+          analyses={analyses?.data ?? []}
+          applicationId={id}
+        />
       )}
     </div>
   );
