@@ -83,17 +83,6 @@ export const HistoryComparePanel = ({
         </p>
       </div>
 
-      {canCompare ? (
-        <div className="grid gap-3 xl:grid-cols-2">
-          <HistoryCompareCard label="Left version" version={leftVersion!} />
-          <HistoryCompareCard label="Right version" version={rightVersion!} />
-        </div>
-      ) : (
-        <div className="rounded-lg border border-dashed border-border/70 px-4 py-6 text-sm text-muted-foreground">
-          Select two different versions to open a side-by-side comparison.
-        </div>
-      )}
-
       {typeof summary.scoreDelta === "number" ? (
         <div className="rounded-lg border border-border/60 bg-background p-3">
           <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
@@ -105,6 +94,17 @@ export const HistoryComparePanel = ({
           </p>
         </div>
       ) : null}
+
+      {canCompare ? (
+        <div className="grid gap-3 xl:grid-cols-2">
+          <HistoryCompareCard label="Left version" version={leftVersion!} />
+          <HistoryCompareCard label="Right version" version={rightVersion!} />
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed border-border/70 px-4 py-6 text-sm text-muted-foreground">
+          Select two different versions to open a side-by-side comparison.
+        </div>
+      )}
     </section>
   );
 };
