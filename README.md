@@ -112,8 +112,8 @@ This feature turns Calibrate AI into a longitudinal coaching tool where you can 
 
 ### Upcoming
 - [x] Resume upload (PDF parsing)
-- [x] Resume versioning + analysis history (currently working)
-- [ ] AI resume rewriter / optimizer
+- [x] Resume versioning + analysis history
+- [ ] AI resume rewriter / optimizer  (currently working)
 - [ ] Interview preparation system
 - [ ] Analytics intelligence
 - [ ] Real-time notifications + background jobs
