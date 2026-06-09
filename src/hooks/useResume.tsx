@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SubmitHandler, useForm } from "react-hook-form";
 
-import { useEffect } from "react";
+import { useCallback } from "react";
 
 import { ResumeInputSchema } from "@/schemas/resume";
 
@@ -15,7 +15,6 @@ export const useResume = ({ onSubmit }: UseResumeProps) => {
   const {
     register,
     handleSubmit,
-    watch,
     getValues,
     reset,
     setValue,
@@ -28,18 +27,32 @@ export const useResume = ({ onSubmit }: UseResumeProps) => {
     },
   });
 
-  useEffect(() => {
-    const resume = getValues("resume")?.[0];
-    const resumeName = resume?.name;
+  const submitIfValid = useCallback(() => {
+    void handleSubmit(onSubmit)();
+  }, [handleSubmit, onSubmit]);
 
-    setValue("resumeName", resumeName);
+  const syncResumeName = useCallback(
+    (file: File) => {
+      setValue("resumeName", file.name);
+    },
+    [setValue],
+  );
 
-    if (resume && !isSubmitting) {
-      handleSubmit(onSubmit)();
-    }
-  }, [watch("resume")]);
+  const resumeField = register("resume");
 
-  const renameResumeFile = () => {
+  const onResumeChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      resumeField.onChange(event);
+      const file = event.target.files?.[0];
+      if (file) {
+        syncResumeName(file);
+        submitIfValid();
+      }
+    },
+    [resumeField, syncResumeName, submitIfValid],
+  );
+
+  const renameResumeFile = useCallback(() => {
     const resumeName = getValues("resumeName");
     const resumeFile = getValues("resume")?.[0];
     if (!resumeFile) return;
@@ -56,14 +69,16 @@ export const useResume = ({ onSubmit }: UseResumeProps) => {
       shouldDirty: true,
       shouldValidate: true,
     });
-
-    handleSubmit(onSubmit)();
-  };
+    syncResumeName(renamedFile);
+    submitIfValid();
+  }, [getValues, setValue, syncResumeName, submitIfValid]);
 
   return {
     register,
     reset,
     renameResumeFile,
+    resumeField,
+    onResumeChange,
     errors,
     handleSubmit,
     isSubmitting,

@@ -1,11 +1,9 @@
 "use client";
 
-import { FormState, UseFormRegister } from "react-hook-form";
-import { ZodIssue } from "zod/v3";
+import { FormState, UseFormRegister, UseFormRegisterReturn } from "react-hook-form";
 
 import { useRef } from "react";
 
-import { TextField } from "@/components/input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,6 +20,8 @@ import { Input } from "@/components/ui/input";
 
 export function CreateAnalysisDialog({
   register,
+  resumeField,
+  onResumeChange,
   errors,
   handleSubmit,
   isSubmitting,
@@ -36,6 +36,8 @@ export function CreateAnalysisDialog({
     resume: FileList | null;
     resumeName?: string;
   }>;
+  resumeField: UseFormRegisterReturn<"resume">;
+  onResumeChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   errors: FormState<{
     resume: FileList | null;
     resumeName?: string;
@@ -85,7 +87,11 @@ export function CreateAnalysisDialog({
                   A resume with this name already exists. Please rename your
                   file and try again.
                 </p>
-                <Button disabled={isSubmitting} onClick={renameResume}>
+                <Button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={renameResume}
+                >
                   {isSubmitting ? "Uploading..." : "Upload Resume"}
                 </Button>
               </>
@@ -94,18 +100,24 @@ export function CreateAnalysisDialog({
                 <p className="text-xs text-muted-foreground">
                   Supported formats: PDF
                 </p>
-                <Button onClick={uploadHandler} disabled={isSubmitting}>
+                <Button
+                  type="button"
+                  onClick={uploadHandler}
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? "Uploading..." : "Upload Resume"}
                 </Button>
                 <input
                   type="file"
                   placeholder="Enter your resume here"
-                  {...register("resume")}
+                  name={resumeField.name}
+                  onBlur={resumeField.onBlur}
+                  onChange={onResumeChange}
                   className="invisible h-0 w-0 absolute"
                   accept=".pdf"
-                  ref={(e) => {
-                    register("resume").ref(e);
-                    fileInputRef.current = e;
+                  ref={(element) => {
+                    resumeField.ref(element);
+                    fileInputRef.current = element;
                   }}
                 />
               </>

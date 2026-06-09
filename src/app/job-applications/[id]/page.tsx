@@ -134,6 +134,8 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
     register,
     reset,
     renameResumeFile,
+    resumeField,
+    onResumeChange,
     errors,
     isSubmitting,
     handleSubmit,
@@ -159,6 +161,8 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
               </Button>
               <CreateAnalysisDialog
                 register={register}
+                resumeField={resumeField}
+                onResumeChange={onResumeChange}
                 errors={errors}
                 handleSubmit={handleSubmit(onSubmit)}
                 isSubmitting={isSubmitting}
@@ -184,6 +188,8 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
         </p>
         <CreateAnalysisDialog
           register={register}
+          resumeField={resumeField}
+          onResumeChange={onResumeChange}
           errors={errors}
           handleSubmit={handleSubmit(onSubmit)}
           isSubmitting={isSubmitting}
