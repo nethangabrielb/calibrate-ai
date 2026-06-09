@@ -8,7 +8,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import z from "zod";
 
 import { use, useEffect, useState } from "react";
 
