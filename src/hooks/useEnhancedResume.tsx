@@ -1,17 +1,18 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SubmitHandler, useForm } from "react-hook-form";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import { ResumeInputSchema } from "@/schemas/resume";
+import { EnhancedResumeInputSchema } from "@/schemas/resume";
 
-import { ResumeInput } from "@/types/resume";
+import { EnhancedResumeInput } from "@/types/resume";
 
-type UseResumeProps = {
-  onSubmit?: SubmitHandler<ResumeInput>;
+type UseEnhancedResumeProps = {
+  onSubmit?: SubmitHandler<EnhancedResumeInput>;
 };
 
-export const useResume = ({ onSubmit }: UseResumeProps) => {
+export const useEnhancedResume = ({ onSubmit }: UseEnhancedResumeProps) => {
+  const [hasCompleteFields, setHasCompleteFields] = useState<boolean>(false);
   const {
     register,
     handleSubmit,
@@ -20,18 +21,25 @@ export const useResume = ({ onSubmit }: UseResumeProps) => {
     setValue,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<ResumeInput>({
-    resolver: zodResolver(ResumeInputSchema),
+  } = useForm<EnhancedResumeInput>({
+    resolver: zodResolver(EnhancedResumeInputSchema),
+    mode: "onChange",
     defaultValues: {
       resume: null,
       resumeName: "",
+      jobDescription: "",
     },
   });
 
-  const submitIfValid = useCallback(() => {
-    if (!onSubmit) return;
-    void handleSubmit(onSubmit)();
-  }, [handleSubmit, onSubmit]);
+  useEffect(() => {
+    const resume = getValues("resume");
+    const jobDescription = getValues("jobDescription");
+    if (resume && jobDescription && !errors.resume && !errors.jobDescription) {
+      setHasCompleteFields(true);
+    } else {
+      setHasCompleteFields(false);
+    }
+  }, [watch("jobDescription"), watch("resume")]);
 
   const syncResumeName = useCallback(
     (file: File) => {
@@ -43,15 +51,14 @@ export const useResume = ({ onSubmit }: UseResumeProps) => {
   const resumeField = register("resume");
 
   const onResumeChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
       resumeField.onChange(event);
       const file = event.target.files?.[0];
       if (file) {
         syncResumeName(file);
-        submitIfValid();
       }
     },
-    [resumeField, syncResumeName, submitIfValid],
+    [resumeField, syncResumeName],
   );
 
   const renameResumeFile = useCallback(() => {
@@ -72,8 +79,7 @@ export const useResume = ({ onSubmit }: UseResumeProps) => {
       shouldValidate: true,
     });
     syncResumeName(renamedFile);
-    submitIfValid();
-  }, [getValues, setValue, syncResumeName, submitIfValid]);
+  }, [getValues, setValue, syncResumeName]);
 
   return {
     register,
@@ -85,5 +91,7 @@ export const useResume = ({ onSubmit }: UseResumeProps) => {
     handleSubmit,
     isSubmitting,
     getValues,
+    watch,
+    hasCompleteFields,
   };
 };

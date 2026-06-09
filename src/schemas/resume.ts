@@ -38,3 +38,13 @@ export const ResumeInputSchema = z.object({
     .transform((val) => (val === "" ? undefined : val))
     .optional(),
 });
+
+export const EnhancedResumeInputSchema = z.object({
+  resume: ResumeInputSchema.shape.resume,
+  resumeName: ResumeInputSchema.shape.resumeName,
+  jobDescription: z
+    .string()
+    .min(50, { message: "Job description is too short." })
+    .max(10000, { message: "Job description is too long." })
+    .trim(),
+});
