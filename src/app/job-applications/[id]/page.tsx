@@ -26,7 +26,7 @@ import { ResumeInputSchema } from "@/schemas/resume";
 
 import { Analysis } from "@/types/analysis";
 import { Application } from "@/types/application";
-import { ResumeInput } from "@/types/resume";
+import { Resume, ResumeInput } from "@/types/resume";
 
 const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
   const router = useRouter();
@@ -133,12 +133,21 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
 
     handleSubmit(onSubmit)();
   };
+
   const onSubmit: SubmitHandler<ResumeInput> = async (_data) => {
     const resumeFile = _data.resume?.[0];
 
     if (resumeFile) {
       try {
-        const parsedResumeFile = await uploadResumeFile(resumeFile as File);
+        const parsedResumeFile = (await uploadResumeFile(
+          resumeFile as File,
+        )) as {
+          success: boolean;
+          resume: Resume | null;
+          error?: string;
+          status?: number;
+        };
+
         if (parsedResumeFile.success) {
           const res = await fetch(`/api/analysis/${id}`, {
             method: "POST",
