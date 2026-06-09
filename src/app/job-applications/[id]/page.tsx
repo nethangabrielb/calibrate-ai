@@ -3,13 +3,13 @@
 import { AnalysisPanel } from "@/app/job-applications/components/analysis-panel";
 import JobApplicationSkeleton from "@/app/job-applications/components/job-application-skeleton";
 import SkeletonAnalysisPanel from "@/app/job-applications/components/skeleton-analysis-panel";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useResume } from "@/hooks/useResume";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, MapPin } from "lucide-react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 
-import { use, useEffect, useState } from "react";
+import { use, useState } from "react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,8 +21,6 @@ import { Separator } from "@/components/ui/separator";
 import { formatDate } from "@/lib/data";
 import { uploadResumeFile } from "@/lib/resume";
 import { cn } from "@/lib/utils";
-
-import { ResumeInputSchema } from "@/schemas/resume";
 
 import { Analysis } from "@/types/analysis";
 import { Application } from "@/types/application";
@@ -69,22 +67,6 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
     enabled: !!id,
   });
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    getValues,
-    reset,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<ResumeInput>({
-    resolver: zodResolver(ResumeInputSchema),
-    defaultValues: {
-      resume: null,
-      resumeName: "",
-    },
-  });
-
   const statusStyle = (
     status: "APPLIED" | "INTERVIEWING" | "OFFERED" | "REJECTED",
   ) => {
@@ -100,38 +82,6 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
       default:
         return "";
     }
-  };
-
-  useEffect(() => {
-    const resume = getValues("resume")?.[0];
-    const resumeName = resume?.name;
-
-    setValue("resumeName", resumeName);
-
-    if (resume && !isSubmitting) {
-      handleSubmit(onSubmit)();
-    }
-  }, [watch("resume")]);
-
-  const renameResumeFile = () => {
-    const resumeName = getValues("resumeName");
-    const resumeFile = getValues("resume")?.[0];
-    if (!resumeFile) return;
-
-    const newName = resumeName?.trim() || resumeFile.name;
-    const renamedFile = new File([resumeFile], newName, {
-      type: resumeFile.type,
-    });
-
-    const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(renamedFile);
-
-    setValue("resume", dataTransfer.files, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-
-    handleSubmit(onSubmit)();
   };
 
   const onSubmit: SubmitHandler<ResumeInput> = async (_data) => {
@@ -179,6 +129,16 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
       }
     }
   };
+
+  const {
+    register,
+    reset,
+    renameResumeFile,
+    errors,
+    isSubmitting,
+    handleSubmit,
+    getValues,
+  } = useResume({ onSubmit });
 
   const analysisContent = (() => {
     if (analysisPending) {
