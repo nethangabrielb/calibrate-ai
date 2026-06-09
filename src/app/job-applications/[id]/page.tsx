@@ -156,10 +156,8 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
                 className="w-fit cursor-pointer"
                 variant="outline"
                 onClick={() => router.push(`/job-applications/${id}/history`)}
-              >
-                View Analysis History
-              </Button>
-              <CreateAnalysisDialog
+              >View Analysis History
+              </Button><CreateAnalysisDialog
                 register={register}
                 resumeField={resumeField}
                 onResumeChange={onResumeChange}
