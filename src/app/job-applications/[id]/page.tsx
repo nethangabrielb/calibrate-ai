@@ -23,40 +23,11 @@ import { formatDate } from "@/lib/data";
 import { uploadResumeFile } from "@/lib/resume";
 import { cn } from "@/lib/utils";
 
+import { ResumeInputSchema } from "@/schemas/resume";
+
 import { Analysis } from "@/types/analysis";
 import { Application } from "@/types/application";
-
-const ResumeSchema = z.object({
-  resume: z
-    .instanceof(FileList)
-    .refine((files: FileList) => files[0]?.type === "application/pdf", {
-      message: "Only PDF files are accepted.",
-    })
-    .refine((files: FileList) => files[0]?.size < 5 * 1024 * 1024, {
-      message: "File size must be less than 5MB.",
-    })
-    .refine(
-      async (files: FileList) => {
-        const res = await fetch(
-          `/api/resume/check-name?resumeName=${files[0]?.name}`,
-        );
-        const { exists } = await res.json();
-        return !exists;
-      },
-      {
-        message: "Resume with this name already exists.",
-      },
-    )
-    .nullable(),
-  resumeName: z
-    .string()
-    .max(50, { message: "New file name must be less than 50 characters." })
-    .trim()
-    .transform((val) => (val === "" ? undefined : val))
-    .optional(),
-});
-
-type ResumeFormData = z.infer<typeof ResumeSchema>;
+import { ResumeInput } from "@/types/resume";
 
 const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
   const router = useRouter();
@@ -107,8 +78,8 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
     reset,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<ResumeFormData>({
-    resolver: zodResolver(ResumeSchema),
+  } = useForm<ResumeInput>({
+    resolver: zodResolver(ResumeInputSchema),
     defaultValues: {
       resume: null,
       resumeName: "",
@@ -163,7 +134,7 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
 
     handleSubmit(onSubmit)();
   };
-  const onSubmit: SubmitHandler<ResumeFormData> = async (_data) => {
+  const onSubmit: SubmitHandler<ResumeInput> = async (_data) => {
     const resumeFile = _data.resume?.[0];
 
     if (resumeFile) {

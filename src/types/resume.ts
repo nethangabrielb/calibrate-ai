@@ -1,5 +1,6 @@
 import z from "zod";
 
-import { ResumeSchema } from "@/schemas/resume";
+import { ResumeInputSchema, ResumeSchema } from "@/schemas/resume";
 
 export type Resume = z.infer<typeof ResumeSchema>;
+export type ResumeInput = z.infer<typeof ResumeInputSchema>;
