@@ -74,7 +74,7 @@ export const EnhancedResumeResult = ({
               
               /* Apply standard page margins directly to the body as padding */
               body {
-                padding: 20mm 20mm !important;
+                padding: 12mm 15mm !important;
               }
               
               /* Reset the parent container to display natural document layout */
@@ -152,6 +152,15 @@ export const EnhancedResumeResult = ({
               .print-document-view td {
                 padding: 2pt 6pt !important;
               }
+              /* Center the contact info line (first p right after the name h1) */
+              .print-document-view h1 + p {
+                text-align: center !important;
+              }
+            }
+
+            /* Screen: center contact info line under the name */
+            .print-document-view h1 + p {
+              text-align: center;
             }
           `,
         }}
@@ -309,7 +318,7 @@ export const EnhancedResumeResult = ({
                     />
                   ),
                   thead: ({ ...props }) => (
-                    <thead className="border-border border-b" {...props} />
+                    <thead className="sr-only" {...props} />
                   ),
                   th: ({ ...props }) => (
                     <th
