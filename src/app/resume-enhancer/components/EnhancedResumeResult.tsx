@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Check, Copy, Download, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 
 import { useCallback, useState } from "react";
@@ -257,6 +258,7 @@ export const EnhancedResumeResult = ({
           <Card className="print-document-view border-border/70 bg-card mx-auto min-h-[960px] w-full max-w-[816px] rounded-sm p-8 font-sans shadow-md md:p-12">
             <article className="prose prose-sm dark:prose-invert max-w-none">
               <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
                 components={{
                   h1: ({ ...props }) => (
                     <h1
