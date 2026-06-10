@@ -48,20 +48,32 @@ export const EnhancedResumeResult = ({
         dangerouslySetInnerHTML={{
           __html: `
             @media print {
-              /* Hide the sidebar and other screen-only utilities */
-              main > div:first-child,
+              /* Remove browser's default headers (date/title) and footers (URL/page numbers) by setting margin to 0 */
+              @page {
+                size: A4;
+                margin: 0;
+              }
+
+              /* Hide the sidebar, top navigation bar and other screen-only utilities */
+              main > :not(:last-child),
               .print\\:hidden,
               .no-print {
                 display: none !important;
               }
               
-              /* Force clean backgrounds & text colors */
+              /* Reset body and html layout to flow naturally across printed pages */
               html, body, main {
                 height: auto !important;
                 min-height: 0 !important;
                 overflow: visible !important;
                 background: white !important;
                 color: black !important;
+                margin: 0 !important;
+              }
+              
+              /* Apply standard page margins directly to the body as padding */
+              body {
+                padding: 20mm 20mm !important;
               }
               
               /* Reset the parent container to display natural document layout */
@@ -81,7 +93,7 @@ export const EnhancedResumeResult = ({
                 background: white !important;
               }
               
-              /* Stylize the A4 preview box into a standard full-width page */
+              /* Remove the shadow, border and screen constraints from the document view card */
               .print-document-view {
                 border: none !important;
                 box-shadow: none !important;
@@ -91,53 +103,6 @@ export const EnhancedResumeResult = ({
                 color: black !important;
                 width: 100% !important;
                 max-width: 100% !important;
-              }
-
-              /* Refined print typography rules */
-              .print-document-view h1 {
-                font-size: 20pt !important;
-                font-weight: bold !important;
-                color: black !important;
-                text-align: center !important;
-                margin-top: 0 !important;
-                margin-bottom: 6pt !important;
-              }
-              
-              .print-document-view h2 {
-                font-size: 12pt !important;
-                font-weight: bold !important;
-                color: black !important;
-                border-bottom: 1.5px solid #111 !important;
-                padding-bottom: 2px !important;
-                margin-top: 16pt !important;
-                margin-bottom: 6pt !important;
-                text-transform: uppercase !important;
-                letter-spacing: 0.5px !important;
-              }
-              
-              .print-document-view h3 {
-                font-size: 10.5pt !important;
-                font-weight: bold !important;
-                color: black !important;
-                margin-top: 8pt !important;
-                margin-bottom: 2pt !important;
-              }
-              
-              .print-document-view p,
-              .print-document-view li {
-                font-size: 9.5pt !important;
-                line-height: 1.4 !important;
-                color: #222 !important;
-              }
-              
-              .print-document-view ul {
-                list-style-type: disc !important;
-                padding-left: 15px !important;
-                margin-bottom: 6pt !important;
-              }
-              
-              .print-document-view li {
-                margin-bottom: 2px !important;
               }
             }
           `,

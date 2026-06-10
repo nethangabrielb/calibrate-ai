@@ -86,10 +86,21 @@ export const POST = async (request: NextRequest) => {
         ${resume}
         </resume>
 
+        Formatting rules:
+        - Use a single # for the candidate's name
+        - Use ## for major sections (Technical Skills, Professional Experience, Projects, Education, etc.)
+        - For the Technical Skills section, use a markdown table with two columns: Category and Technologies. Example:
+          | Category | Technologies |
+          |----------|-------------|
+          | Languages | TypeScript, JavaScript, PHP |
+          | Frontend | React, Next.js, Tailwind CSS |
+        - For experience and project entries, use ### for the role/project title line, followed by bullet points
+        - Each bullet point should be one concise line, max 20 words
+        - No filler phrases, no repetition
+
         Constraints:
         - Keep the total output between 400 and 550 words — enough to fill one A4 page without overflow
-        - Each bullet point should be one concise line, max 15 words
-        - No filler phrases, no repetition
+        - Do NOT include a "Key Achievements" or summary section at the bottom — end with Education
     
         Return ONLY the rewritten resume in Markdown. No preamble, no explanation, no markdown fences.
       `,
