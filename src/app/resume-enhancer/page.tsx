@@ -2,7 +2,10 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { Sparkles } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
 
 import { uploadResumeFile } from "@/lib/resume";
 
@@ -55,7 +58,10 @@ const ResumeEnhancerPage = () => {
         );
       }
 
-      return enhancedResume.data as string;
+      return {
+        data: enhancedResume.data as string,
+        resumeName: data.resumeName || file.name,
+      };
     },
     onError: (err: Error) => {
       toast.error(err.message || "An unexpected error occurred.");
@@ -76,6 +82,17 @@ const ResumeEnhancerPage = () => {
             reshape your experience so it reads stronger for that specific role.
           </p>
         </div>
+        {mutation.isSuccess && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => mutation.reset()}
+            className="absolute top-0 right-0 mx-8 my-4 flex w-fit items-center gap-2"
+          >
+            <ArrowLeft className="size-4" />
+            Enhance Another
+          </Button>
+        )}
       </section>
 
       {/* main conditional rendering flow */}
@@ -83,7 +100,8 @@ const ResumeEnhancerPage = () => {
         <ResumeEnhancerLoading />
       ) : mutation.isSuccess && mutation.data ? (
         <EnhancedResumeResult
-          enhancedResume={mutation.data}
+          enhancedResume={mutation.data.data}
+          resumeName={mutation.data.resumeName}
           onReset={() => mutation.reset()}
         />
       ) : (

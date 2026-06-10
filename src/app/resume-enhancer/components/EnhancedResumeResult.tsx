@@ -18,11 +18,13 @@ import {
 
 interface EnhancedResumeResultProps {
   enhancedResume: string;
+  resumeName: string;
   onReset: () => void;
 }
 
 export const EnhancedResumeResult = ({
   enhancedResume,
+  resumeName,
   onReset,
 }: EnhancedResumeResultProps) => {
   const [copied, setCopied] = useState(false);
@@ -180,16 +182,6 @@ export const EnhancedResumeResult = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={onReset}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="size-4" />
-            Enhance Another
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
             onClick={handleCopy}
             className="flex items-center gap-2"
           >
@@ -322,7 +314,7 @@ export const EnhancedResumeResult = ({
                   ),
                   th: ({ ...props }) => (
                     <th
-                      className="text-foreground px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-wider"
+                      className="text-foreground px-3 py-1.5 text-left text-xs font-semibold tracking-wider uppercase"
                       {...props}
                     />
                   ),
