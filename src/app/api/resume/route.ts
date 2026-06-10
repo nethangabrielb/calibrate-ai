@@ -28,7 +28,7 @@ export const POST = async (_request: NextRequest) => {
   const { text } = await extractText(pdf, { mergePages: true });
 
   // save resume and associate it with current user in database
-  if (save) {
+  if (save === "true") {
     const resume = await prisma.resume.create({
       data: {
         content: text,
