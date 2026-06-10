@@ -103,6 +103,53 @@ export const EnhancedResumeResult = ({
                 color: black !important;
                 width: 100% !important;
                 max-width: 100% !important;
+                min-height: 0 !important;
+              }
+
+              /* Print typography — match screen look but compact for single page */
+              .print-document-view h1 {
+                font-size: 22pt !important;
+                margin-top: 0 !important;
+                margin-bottom: 4pt !important;
+              }
+
+              .print-document-view h2 {
+                font-size: 12pt !important;
+                margin-top: 14pt !important;
+                margin-bottom: 4pt !important;
+              }
+
+              .print-document-view h3 {
+                font-size: 10pt !important;
+                margin-top: 6pt !important;
+                margin-bottom: 2pt !important;
+              }
+
+              .print-document-view p {
+                font-size: 9pt !important;
+                line-height: 1.35 !important;
+                margin-bottom: 3pt !important;
+              }
+
+              .print-document-view ul,
+              .print-document-view ol {
+                margin-bottom: 3pt !important;
+                padding-left: 14px !important;
+              }
+
+              .print-document-view li {
+                font-size: 9pt !important;
+                line-height: 1.35 !important;
+                margin-bottom: 1pt !important;
+              }
+
+              .print-document-view table {
+                font-size: 9pt !important;
+              }
+
+              .print-document-view th,
+              .print-document-view td {
+                padding: 2pt 6pt !important;
               }
             }
           `,
@@ -250,6 +297,27 @@ export const EnhancedResumeResult = ({
                   li: ({ ...props }) => (
                     <li
                       className="text-foreground/90 text-sm leading-relaxed"
+                      {...props}
+                    />
+                  ),
+                  table: ({ ...props }) => (
+                    <table
+                      className="text-foreground/90 mb-4 w-full border-collapse text-sm"
+                      {...props}
+                    />
+                  ),
+                  thead: ({ ...props }) => (
+                    <thead className="border-border border-b" {...props} />
+                  ),
+                  th: ({ ...props }) => (
+                    <th
+                      className="text-foreground px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-wider"
+                      {...props}
+                    />
+                  ),
+                  td: ({ ...props }) => (
+                    <td
+                      className="border-border/40 text-foreground/90 border-b px-3 py-1.5 text-sm"
                       {...props}
                     />
                   ),
