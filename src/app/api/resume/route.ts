@@ -13,6 +13,8 @@ export const POST = async (_request: NextRequest) => {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const searchParams = _request.nextUrl.searchParams;
+  const save = searchParams.get("save");
   const formData = await _request.formData();
 
   const file = formData.get("resume") as File;
@@ -25,15 +27,20 @@ export const POST = async (_request: NextRequest) => {
   const pdf = await getDocumentProxy(new Uint8Array(buffer));
   const { text } = await extractText(pdf, { mergePages: true });
 
-  // NEW: save resume and associate it with current user in database
-  const resume = await prisma.resume.create({
-    data: {
-      content: text,
-      userId: user.id,
-      name: file.name,
-    },
-  });
+  // save resume and associate it with current user in database
+  if (save) {
+    const resume = await prisma.resume.create({
+      data: {
+        content: text,
+        userId: user.id,
+        name: file.name,
+      },
+    });
 
-  // Return the resume data in the response
-  return NextResponse.json({ success: true, resume: resume });
+    // Return the resume data in the response
+    return NextResponse.json({ success: true, resume: resume });
+  } else {
+    // Return the resume content in the response
+    return NextResponse.json({ success: true, resume: text });
+  }
 };

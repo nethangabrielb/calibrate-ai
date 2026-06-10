@@ -4,6 +4,7 @@ import { useEnhancedResume } from "@/hooks/useEnhancedResume";
 import { useMutation } from "@tanstack/react-query";
 import { FileText, Sparkles, Upload } from "lucide-react";
 import { SubmitHandler } from "react-hook-form";
+import { toast } from "sonner";
 
 import { useEffect, useRef } from "react";
 
@@ -19,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 
+import { uploadResumeFile } from "@/lib/resume";
 import { cn } from "@/lib/utils";
 
 import { EnhancedResumeInput } from "@/types/resume";
@@ -27,13 +29,43 @@ const ResumeEnhancerPage = () => {
   const mutation = useMutation({
     mutationFn: async (data: EnhancedResumeInput) => {
       // TODO: Implement the resume enhancement flow:
-      // 1. Get the PDF file from the data.resume FileList (e.g., data.resume?.[0])
-      // 2. Upload the file and extract its content by calling /api/resume (or using uploadResumeFile helper)
-      // 3. Retrieve the parsed resume content string from the response
-      // 4. Make a POST request to /api/resume/enhance with:
-      //    - resume: the extracted text from the upload
-      //    - jobDescription: data.jobDescription
-      // 5. Return the response containing the enhanced resume
+      // get the PDF file from the data.resume FileList (e.g., data.resume?.[0])
+      try {
+        const file = data.resume?.[0] as File;
+        const formData = new FormData();
+        formData.append("file", file);
+
+        // upload the file and extract its content by calling /api/resume (or using uploadResumeFile helper)
+        const res = await uploadResumeFile(file, false);
+        if (!res.success || !res.resume) {
+          toast.error("Failed to upload resume");
+          return;
+        }
+        // retrieve the parsed resume content string from the response
+        const parsedResume = res.resume as string;
+
+        const enhanceRes = await fetch("/api/resume/enhance", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            resume: parsedResume,
+            jobDescription: data.jobDescription,
+          }),
+        });
+
+        if (!enhanceRes.ok) {
+          const errorData = await enhanceRes.json();
+          toast.error(errorData.error || "Failed to enhance resume");
+          return;
+        }
+
+        const enhancedResume = await enhanceRes.json();
+        return enhancedResume;
+      } catch (err) {
+        toast.error("Error processing request.");
+      }
     },
   });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -43,8 +75,7 @@ const ResumeEnhancerPage = () => {
   };
 
   const onSubmit: SubmitHandler<EnhancedResumeInput> = (data) => {
-    console.log("Submit!");
-    // mutation.mutate(data);
+    mutation.mutate(data);
   };
 
   const {
