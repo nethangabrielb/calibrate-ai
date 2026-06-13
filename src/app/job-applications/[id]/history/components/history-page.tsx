@@ -103,6 +103,8 @@ export const HistoryPage = ({
           <HistoryTimeline
             versions={versions}
             onCompareFromHere={handleCompareFromHere}
+            jobDescription={application.description}
+            applicationId={applicationId}
           />
         </div>
       </div>

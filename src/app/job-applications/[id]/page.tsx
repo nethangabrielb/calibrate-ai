@@ -3,14 +3,13 @@
 import { AnalysisPanel } from "@/app/job-applications/components/analysis-panel";
 import JobApplicationSkeleton from "@/app/job-applications/components/job-application-skeleton";
 import SkeletonAnalysisPanel from "@/app/job-applications/components/skeleton-analysis-panel";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useResume } from "@/hooks/useResume";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, MapPin } from "lucide-react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { ArrowLeft, MapPin, Sparkles } from "lucide-react";
+import { SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
-import z from "zod";
 
-import { use, useEffect, useState } from "react";
+import { use, useState, useEffect } from "react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -25,44 +24,76 @@ import { cn } from "@/lib/utils";
 
 import { Analysis } from "@/types/analysis";
 import { Application } from "@/types/application";
-
-const ResumeSchema = z.object({
-  resume: z
-    .instanceof(FileList)
-    .refine((files: FileList) => files[0]?.type === "application/pdf", {
-      message: "Only PDF files are accepted.",
-    })
-    .refine((files: FileList) => files[0]?.size < 5 * 1024 * 1024, {
-      message: "File size must be less than 5MB.",
-    })
-    .refine(
-      async (files: FileList) => {
-        const res = await fetch(
-          `/api/resume/check-name?resumeName=${files[0]?.name}`,
-        );
-        const { exists } = await res.json();
-        return !exists;
-      },
-      {
-        message: "Resume with this name already exists.",
-      },
-    )
-    .nullable(),
-  resumeName: z
-    .string()
-    .max(50, { message: "New file name must be less than 50 characters." })
-    .trim()
-    .transform((val) => (val === "" ? undefined : val))
-    .optional(),
-});
-
-type ResumeFormData = z.infer<typeof ResumeSchema>;
+import { Resume, ResumeInput } from "@/types/resume";
 
 const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [isFitCheckRunning, setIsFitCheckRunning] = useState(false);
   const queryClient = useQueryClient();
   const { id } = use(params);
+
+  useEffect(() => {
+    const fitResumeContent = sessionStorage.getItem("fit_check_resume_content");
+    const fitResumeName = sessionStorage.getItem("fit_check_resume_name");
+
+    if (fitResumeContent && fitResumeName) {
+      // Clear sessionStorage immediately so we don't repeat on reload
+      sessionStorage.removeItem("fit_check_resume_content");
+      sessionStorage.removeItem("fit_check_resume_name");
+
+      setIsFitCheckRunning(true);
+
+      const runFitCheck = async () => {
+        try {
+          // 1. Save the resume text via /api/resume?save=true
+          const saveRes = await fetch("/api/resume?save=true", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              content: fitResumeContent,
+              name: fitResumeName,
+            }),
+          });
+
+          if (!saveRes.ok) {
+            const errData = await saveRes.json();
+            throw new Error(errData.error || "Failed to save enhanced resume.");
+          }
+
+          const { resume } = await saveRes.json();
+
+          // 2. Trigger AI analysis against this job application
+          const analysisRes = await fetch(`/api/analysis/${id}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ resume }),
+          });
+
+          const analysisData = await analysisRes.json();
+
+          if (!analysisRes.ok) {
+            throw new Error(analysisData.message || "Failed to run analysis against job application.");
+          }
+
+          toast.success("AI analysis completed — showing enhanced resume results.");
+          queryClient.invalidateQueries({ queryKey: ["analyses", id] });
+        } catch (err) {
+          console.error(err);
+          toast.error(err instanceof Error ? err.message : "Failed to analyze enhanced resume.");
+        } finally {
+          setIsFitCheckRunning(false);
+        }
+      };
+
+      runFitCheck();
+    }
+  }, [id, queryClient, router]);
+
   const { data, isPending: applicationPending } = useQuery<Application>({
     queryKey: ["application", id],
     queryFn: async () => {
@@ -99,22 +130,6 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
     enabled: !!id,
   });
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    getValues,
-    reset,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<ResumeFormData>({
-    resolver: zodResolver(ResumeSchema),
-    defaultValues: {
-      resume: null,
-      resumeName: "",
-    },
-  });
-
   const statusStyle = (
     status: "APPLIED" | "INTERVIEWING" | "OFFERED" | "REJECTED",
   ) => {
@@ -132,43 +147,20 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
     }
   };
 
-  useEffect(() => {
-    const resume = getValues("resume")?.[0];
-    const resumeName = resume?.name;
-
-    setValue("resumeName", resumeName);
-
-    if (resume && !isSubmitting) {
-      handleSubmit(onSubmit)();
-    }
-  }, [watch("resume")]);
-
-  const renameResumeFile = () => {
-    const resumeName = getValues("resumeName");
-    const resumeFile = getValues("resume")?.[0];
-    if (!resumeFile) return;
-
-    const newName = resumeName?.trim() || resumeFile.name;
-    const renamedFile = new File([resumeFile], newName, {
-      type: resumeFile.type,
-    });
-
-    const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(renamedFile);
-
-    setValue("resume", dataTransfer.files, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-
-    handleSubmit(onSubmit)();
-  };
-  const onSubmit: SubmitHandler<ResumeFormData> = async (_data) => {
+  const onSubmit: SubmitHandler<ResumeInput> = async (_data) => {
     const resumeFile = _data.resume?.[0];
 
     if (resumeFile) {
       try {
-        const parsedResumeFile = await uploadResumeFile(resumeFile as File);
+        const parsedResumeFile = (await uploadResumeFile(
+          resumeFile as File,
+        )) as {
+          success: boolean;
+          resume: Resume | null;
+          error?: string;
+          status?: number;
+        };
+
         if (parsedResumeFile.success) {
           const res = await fetch(`/api/analysis/${id}`, {
             method: "POST",
@@ -201,7 +193,37 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
     }
   };
 
+  const {
+    register,
+    reset,
+    renameResumeFile,
+    resumeField,
+    onResumeChange,
+    errors,
+    isSubmitting,
+    handleSubmit,
+    getValues,
+  } = useResume({ onSubmit });
+
   const analysisContent = (() => {
+    // Show skeleton with AI analysis message when fit check is running
+    if (isFitCheckRunning) {
+      return (
+        <SkeletonAnalysisPanel>
+          <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border/70 bg-primary/5 px-5 py-6 text-center">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+              <Sparkles className="size-4 animate-pulse" />
+              Analyzing enhanced resume fit…
+            </div>
+            <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+              We&apos;re saving your enhanced resume and running a fresh AI
+              analysis against this job application. This may take a moment.
+            </p>
+          </div>
+        </SkeletonAnalysisPanel>
+      );
+    }
+
     if (analysisPending) {
       return <SkeletonAnalysisPanel />;
     }
@@ -215,11 +237,11 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
                 className="w-fit cursor-pointer"
                 variant="outline"
                 onClick={() => router.push(`/job-applications/${id}/history`)}
-              >
-                View Analysis History
-              </Button>
-              <CreateAnalysisDialog
+              >View Analysis History
+              </Button><CreateAnalysisDialog
                 register={register}
+                resumeField={resumeField}
+                onResumeChange={onResumeChange}
                 errors={errors}
                 handleSubmit={handleSubmit(onSubmit)}
                 isSubmitting={isSubmitting}
@@ -245,6 +267,8 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
         </p>
         <CreateAnalysisDialog
           register={register}
+          resumeField={resumeField}
+          onResumeChange={onResumeChange}
           errors={errors}
           handleSubmit={handleSubmit(onSubmit)}
           isSubmitting={isSubmitting}

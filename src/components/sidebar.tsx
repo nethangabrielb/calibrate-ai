@@ -15,6 +15,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 const links = [
   { name: "Dashboard", href: "/dashboard" },
   { name: "Applications", href: "/job-applications" },
+  { name: "Resume Enhancer", href: "/resume-enhancer" },
 ];
 
 const SidebarContent = ({
@@ -69,7 +70,13 @@ const Sidebar = ({ user }: { user: any }) => {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const hiddenPaths = ["/login", "/sign-up", "/", "/privacy-policy", "/terms-of-service"];
+  const hiddenPaths = [
+    "/login",
+    "/sign-up",
+    "/",
+    "/privacy-policy",
+    "/terms-of-service",
+  ];
   const isVisible = !hiddenPaths.includes(pathname);
 
   return (

@@ -1,4 +1,4 @@
-import { FileUser, LayoutDashboard } from "lucide-react";
+import { FileText, FileUser, LayoutDashboard } from "lucide-react";
 
 const Icon = ({
   name,
@@ -14,6 +14,8 @@ const Icon = ({
       return <LayoutDashboard className={style} />;
     case "applications":
       return <FileUser className={style} />;
+    case "resume enhancer":
+      return <FileText className={style} />;
   }
 };
 

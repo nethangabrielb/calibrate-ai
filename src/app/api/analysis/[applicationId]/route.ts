@@ -230,7 +230,7 @@ export const POST = async (
       {
         "score": <integer 0–100, calibrated strictly against the rubric above>,
         "matchingSkills": [
-          <8–12 strings. Only skills explicitly present in BOTH the resume and JD. Ranked by relevance to the role. No duplicates, no vague categories.>
+          <8–12 strings. Short keyword phrases, maximum 4 words each. Only skills explicitly present in BOTH the resume and JD. Ranked by relevance. No duplicates, no parentheticals, no explanations. Bad: "Collaborative Mindset (Evidenced By Code Reviews)". Good: "TypeScript", "PostgreSQL", "Full-stack Development".>
         ],
         "missingSkills": [
           <5–8 strings. Short keyword phrases, maximum 4 words each. Never full sentences. Bad: "specific mention of maintainable code implementation". Good: "Redis/caching", "design patterns", "load balancing". Only skills explicitly required or preferred in the JD.>

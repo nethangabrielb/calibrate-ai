@@ -2,16 +2,17 @@ import { Resume } from "@/types/resume";
 
 export const uploadResumeFile = async (
   file: File,
+  save: boolean = true,
 ): Promise<{
   success: boolean;
-  resume: Resume | null;
+  resume: Resume | string | null;
   error?: string;
   status?: number;
 }> => {
   const formData = new FormData();
   formData.append("resume", file);
 
-  const res = await fetch(`/api/resume`, {
+  const res = await fetch(`/api/resume?save=${save}`, {
     method: "POST",
     body: formData,
   });

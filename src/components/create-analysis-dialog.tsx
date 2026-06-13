@@ -1,11 +1,13 @@
 "use client";
 
-import { FormState, UseFormRegister } from "react-hook-form";
-import { ZodIssue } from "zod/v3";
+import {
+  FormState,
+  UseFormRegister,
+  UseFormRegisterReturn,
+} from "react-hook-form";
 
 import { useRef } from "react";
 
-import { TextField } from "@/components/input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,6 +24,8 @@ import { Input } from "@/components/ui/input";
 
 export function CreateAnalysisDialog({
   register,
+  resumeField,
+  onResumeChange,
   errors,
   handleSubmit,
   isSubmitting,
@@ -36,6 +40,8 @@ export function CreateAnalysisDialog({
     resume: FileList | null;
     resumeName?: string;
   }>;
+  resumeField: UseFormRegisterReturn<"resume">;
+  onResumeChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   errors: FormState<{
     resume: FileList | null;
     resumeName?: string;
@@ -63,7 +69,7 @@ export function CreateAnalysisDialog({
           {buttonText || "Run AI Analysis"}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-sm max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-sm">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>Run AI Analysis</DialogTitle>
@@ -81,31 +87,41 @@ export function CreateAnalysisDialog({
                   {...register("resumeName")}
                   defaultValue={resumeName ?? ""}
                 />
-                <p className="text-sm text-destructive">
+                <p className="text-destructive text-sm">
                   A resume with this name already exists. Please rename your
                   file and try again.
                 </p>
-                <Button disabled={isSubmitting} onClick={renameResume}>
+                <Button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={renameResume}
+                >
                   {isSubmitting ? "Uploading..." : "Upload Resume"}
                 </Button>
               </>
             ) : (
               <>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Supported formats: PDF
                 </p>
-                <Button onClick={uploadHandler} disabled={isSubmitting}>
+                <Button
+                  type="button"
+                  onClick={uploadHandler}
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? "Uploading..." : "Upload Resume"}
                 </Button>
                 <input
                   type="file"
                   placeholder="Enter your resume here"
-                  {...register("resume")}
-                  className="invisible h-0 w-0 absolute"
+                  name={resumeField.name}
+                  onBlur={resumeField.onBlur}
+                  onChange={onResumeChange}
+                  className="invisible absolute h-0 w-0"
                   accept=".pdf"
-                  ref={(e) => {
-                    register("resume").ref(e);
-                    fileInputRef.current = e;
+                  ref={(element) => {
+                    resumeField.ref(element);
+                    fileInputRef.current = element;
                   }}
                 />
               </>
@@ -116,7 +132,7 @@ export function CreateAnalysisDialog({
             {errors?.resume &&
               errors?.resume?.message !==
                 "Resume with this name already exists." && (
-                <p className="text-sm text-destructive">
+                <p className="text-destructive text-sm">
                   {errors?.resume?.message}
                 </p>
               )}
