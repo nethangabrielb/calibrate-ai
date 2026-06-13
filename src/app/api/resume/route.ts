@@ -15,17 +15,33 @@ export const POST = async (_request: NextRequest) => {
 
   const searchParams = _request.nextUrl.searchParams;
   const save = searchParams.get("save");
-  const formData = await _request.formData();
+  const contentType = _request.headers.get("content-type") || "";
 
-  const file = formData.get("resume") as File;
+  let text = "";
+  let name = "";
 
-  if (!file) {
-    return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+  if (contentType.includes("application/json")) {
+    const body = await _request.json();
+    text = body.content || "";
+    name = body.name || "Enhanced Resume.pdf";
+
+    if (!text) {
+      return NextResponse.json({ error: "No resume content provided" }, { status: 400 });
+    }
+  } else {
+    const formData = await _request.formData();
+    const file = formData.get("resume") as File;
+
+    if (!file) {
+      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+    }
+
+    const buffer = await file?.arrayBuffer();
+    const pdf = await getDocumentProxy(new Uint8Array(buffer));
+    const { text: extractedText } = await extractText(pdf, { mergePages: true });
+    text = extractedText;
+    name = file.name;
   }
-
-  const buffer = await file?.arrayBuffer();
-  const pdf = await getDocumentProxy(new Uint8Array(buffer));
-  const { text } = await extractText(pdf, { mergePages: true });
 
   // save resume and associate it with current user in database
   if (save === "true") {
@@ -33,7 +49,7 @@ export const POST = async (_request: NextRequest) => {
       data: {
         content: text,
         userId: user.id,
-        name: file.name,
+        name: name,
       },
     });
 

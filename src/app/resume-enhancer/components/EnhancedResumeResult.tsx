@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowLeft, Check, Copy, Download, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, Copy, Download, Sparkles, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
@@ -20,14 +21,30 @@ interface EnhancedResumeResultProps {
   enhancedResume: string;
   resumeName: string;
   onReset: () => void;
+  applicationId?: string | null;
 }
 
 export const EnhancedResumeResult = ({
   enhancedResume,
   resumeName,
   onReset,
+  applicationId,
 }: EnhancedResumeResultProps) => {
+  const router = useRouter();
   const [copied, setCopied] = useState(false);
+  const [isCheckingFit, setIsCheckingFit] = useState(false);
+  const handleCheckFit = () => {
+    if (!applicationId) return;
+    setIsCheckingFit(true);
+
+    const newName = resumeName.startsWith("Enhanced_") ? resumeName : `Enhanced_${resumeName}`;
+
+    sessionStorage.setItem("fit_check_resume_content", enhancedResume);
+    sessionStorage.setItem("fit_check_resume_name", newName);
+
+    // Hard navigation to guarantee fresh mount and useEffect trigger
+    window.location.href = `/job-applications/${applicationId}`;
+  };
 
   const handleCopy = useCallback(async () => {
     try {
@@ -179,6 +196,28 @@ export const EnhancedResumeResult = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {applicationId && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isCheckingFit}
+              onClick={handleCheckFit}
+              className="flex items-center gap-2 border-primary/40 text-primary hover:bg-primary/5 hover:text-primary"
+            >
+              {isCheckingFit ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Analyzing Fit...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="size-4" />
+                  Check if enhanced resume fits better against the job application
+                </>
+              )}
+            </Button>
+          )}
+
           <Button
             variant="outline"
             size="sm"

@@ -1,35 +1,49 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { Sparkles } from "lucide-react";
-import { ArrowLeft } from "lucide-react";
+import { Sparkles, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
 import { uploadResumeFile } from "@/lib/resume";
 
-import { EnhancedResumeInput } from "@/types/resume";
-
 import { EnhancedResumeResult } from "./components/EnhancedResumeResult";
 import { ResumeEnhancerForm } from "./components/ResumeEnhancerForm";
 import { ResumeEnhancerLoading } from "./components/ResumeEnhancerLoading";
 
+type EnhanceMutationInput = {
+  resume?: FileList | null;
+  resumeName?: string;
+  jobDescription: string;
+  resumeContent?: string;
+};
+
 const ResumeEnhancerPage = () => {
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+  const hasFiredRef = useRef(false);
+
   const mutation = useMutation({
-    mutationFn: async (data: EnhancedResumeInput) => {
-      const file = data.resume?.[0] as File;
-      if (!file) {
-        throw new Error("Please upload a resume file.");
-      }
+    mutationFn: async (data: EnhanceMutationInput) => {
+      let parsedResume = data.resumeContent || "";
+      let fileName = data.resumeName || "";
 
-      // upload file and extract contents
-      const res = await uploadResumeFile(file, false);
-      if (!res.success || !res.resume) {
-        throw new Error(res.error || "Failed to upload resume");
-      }
+      if (!parsedResume) {
+        const file = data.resume?.[0] as File;
+        if (!file) {
+          throw new Error("Please upload a resume file.");
+        }
+        fileName = file.name;
 
-      const parsedResume = res.resume as string;
+        // upload file and extract contents
+        const res = await uploadResumeFile(file, false);
+        if (!res.success || !res.resume) {
+          throw new Error(res.error || "Failed to upload resume");
+        }
+
+        parsedResume = res.resume as string;
+      }
 
       // request resume enhancement
       const enhanceRes = await fetch("/api/resume/enhance", {
@@ -60,13 +74,45 @@ const ResumeEnhancerPage = () => {
 
       return {
         data: enhancedResume.data as string,
-        resumeName: data.resumeName || file.name,
+        resumeName: data.resumeName || fileName,
       };
     },
     onError: (err: Error) => {
       toast.error(err.message || "An unexpected error occurred.");
     },
   });
+
+  useEffect(() => {
+    if (hasFiredRef.current) return;
+
+    const resumeContent = sessionStorage.getItem("enhance_resume_content");
+    const jobDescription = sessionStorage.getItem("enhance_job_description");
+    const resumeName = sessionStorage.getItem("enhance_resume_name");
+    const appId = sessionStorage.getItem("enhance_application_id");
+
+    if (resumeContent && jobDescription && appId) {
+      hasFiredRef.current = true;
+
+      // Clear immediately
+      sessionStorage.removeItem("enhance_resume_content");
+      sessionStorage.removeItem("enhance_resume_name");
+      sessionStorage.removeItem("enhance_job_description");
+      sessionStorage.removeItem("enhance_application_id");
+
+      setApplicationId(appId);
+      mutation.mutate({
+        resumeContent,
+        resumeName: resumeName || "Resume.pdf",
+        jobDescription,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleReset = () => {
+    setApplicationId(null);
+    mutation.reset();
+  };
 
   return (
     <div className="bg-background text-foreground print-root-container flex h-full min-h-0 w-full min-w-0 flex-col gap-6 px-8 py-4">
@@ -86,7 +132,7 @@ const ResumeEnhancerPage = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => mutation.reset()}
+            onClick={handleReset}
             className="absolute top-0 right-0 mx-8 my-4 flex w-fit items-center gap-2"
           >
             <ArrowLeft className="size-4" />
@@ -102,7 +148,8 @@ const ResumeEnhancerPage = () => {
         <EnhancedResumeResult
           enhancedResume={mutation.data.data}
           resumeName={mutation.data.resumeName}
-          onReset={() => mutation.reset()}
+          onReset={handleReset}
+          applicationId={applicationId}
         />
       ) : (
         <ResumeEnhancerForm
@@ -115,3 +162,4 @@ const ResumeEnhancerPage = () => {
 };
 
 export default ResumeEnhancerPage;
+

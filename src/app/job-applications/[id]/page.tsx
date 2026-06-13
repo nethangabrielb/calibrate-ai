@@ -5,11 +5,11 @@ import JobApplicationSkeleton from "@/app/job-applications/components/job-applic
 import SkeletonAnalysisPanel from "@/app/job-applications/components/skeleton-analysis-panel";
 import { useResume } from "@/hooks/useResume";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, Sparkles } from "lucide-react";
 import { SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -29,8 +29,71 @@ import { Resume, ResumeInput } from "@/types/resume";
 const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [isFitCheckRunning, setIsFitCheckRunning] = useState(false);
   const queryClient = useQueryClient();
   const { id } = use(params);
+
+  useEffect(() => {
+    const fitResumeContent = sessionStorage.getItem("fit_check_resume_content");
+    const fitResumeName = sessionStorage.getItem("fit_check_resume_name");
+
+    if (fitResumeContent && fitResumeName) {
+      // Clear sessionStorage immediately so we don't repeat on reload
+      sessionStorage.removeItem("fit_check_resume_content");
+      sessionStorage.removeItem("fit_check_resume_name");
+
+      setIsFitCheckRunning(true);
+
+      const runFitCheck = async () => {
+        try {
+          // 1. Save the resume text via /api/resume?save=true
+          const saveRes = await fetch("/api/resume?save=true", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              content: fitResumeContent,
+              name: fitResumeName,
+            }),
+          });
+
+          if (!saveRes.ok) {
+            const errData = await saveRes.json();
+            throw new Error(errData.error || "Failed to save enhanced resume.");
+          }
+
+          const { resume } = await saveRes.json();
+
+          // 2. Trigger AI analysis against this job application
+          const analysisRes = await fetch(`/api/analysis/${id}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ resume }),
+          });
+
+          const analysisData = await analysisRes.json();
+
+          if (!analysisRes.ok) {
+            throw new Error(analysisData.message || "Failed to run analysis against job application.");
+          }
+
+          toast.success("AI analysis completed — showing enhanced resume results.");
+          queryClient.invalidateQueries({ queryKey: ["analyses", id] });
+        } catch (err) {
+          console.error(err);
+          toast.error(err instanceof Error ? err.message : "Failed to analyze enhanced resume.");
+        } finally {
+          setIsFitCheckRunning(false);
+        }
+      };
+
+      runFitCheck();
+    }
+  }, [id, queryClient, router]);
+
   const { data, isPending: applicationPending } = useQuery<Application>({
     queryKey: ["application", id],
     queryFn: async () => {
@@ -143,6 +206,24 @@ const JobApplication = ({ params }: { params: Promise<{ id: string }> }) => {
   } = useResume({ onSubmit });
 
   const analysisContent = (() => {
+    // Show skeleton with AI analysis message when fit check is running
+    if (isFitCheckRunning) {
+      return (
+        <SkeletonAnalysisPanel>
+          <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border/70 bg-primary/5 px-5 py-6 text-center">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+              <Sparkles className="size-4 animate-pulse" />
+              Analyzing enhanced resume fit…
+            </div>
+            <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+              We&apos;re saving your enhanced resume and running a fresh AI
+              analysis against this job application. This may take a moment.
+            </p>
+          </div>
+        </SkeletonAnalysisPanel>
+      );
+    }
+
     if (analysisPending) {
       return <SkeletonAnalysisPanel />;
     }

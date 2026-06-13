@@ -7,11 +7,15 @@ import { HistoryVersionCard } from "./history-version-card";
 type HistoryTimelineProps = {
   versions: HistoryVersion[];
   onCompareFromHere: (versionId: number) => void;
+  jobDescription: string;
+  applicationId: string;
 };
 
 export const HistoryTimeline = ({
   versions,
   onCompareFromHere,
+  jobDescription,
+  applicationId,
 }: HistoryTimelineProps) => {
   return (
     <section className="flex flex-col gap-3 rounded-xl border border-border/70 bg-background p-4">
@@ -29,6 +33,8 @@ export const HistoryTimeline = ({
               key={version.id}
               version={version}
               onCompareFromHere={onCompareFromHere}
+              jobDescription={jobDescription}
+              applicationId={applicationId}
             />
           ))}
         </div>
