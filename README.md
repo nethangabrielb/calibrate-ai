@@ -68,7 +68,7 @@ This project was built to:
 - [x] **Job Application Tracking** — Full CRUD for job applications with company, title, description, location, salary, and currency support
 - [x] **Application Status Management** — Track status across `APPLIED`, `INTERVIEWING`, `OFFERED`, and `REJECTED` stages
 - [x] **AI-Powered Resume Analysis** — Upload a PDF resume and get an instant AI-generated fit score, skill match/gap analysis, and personalized recommendations
-- [x] **AI-Powered Resume Analysis** — Upload a PDF resume and get an instant AI-generated fit score, skill match/gap analysis, and personalized recommendations
+- [x] **AI Resume Enhancer & Tailoring** — Optimize and rewrite your resume to target specific job descriptions with LLM assistance, markdown preview, custom print layouts, and integrated fit check testing.
 - [x] **Resume Versioning & History** — Persist multiple uploaded resume versions per application, view a timeline of versions, compare any two versions side-by-side, and track score trends over time
 - [x] **Analytics Dashboard** — Overview cards (total applications, average AI score, active applications, offers), bar chart by status, and recent applications table
 - [x] **Search & Filter** — Global search across applications with column sorting (salary, date, AI score)
@@ -109,11 +109,9 @@ This feature turns Calibrate AI into a longitudinal coaching tool where you can 
 - [x] **Authorization Guards** — Row-level security — users can only access their own applications and analyses
 
 ### Upcoming
-
-### Upcoming
 - [x] Resume upload (PDF parsing)
 - [x] Resume versioning + analysis history
-- [ ] AI resume rewriter / optimizer  (currently working)
+- [x] AI resume rewriter / optimizer
 - [ ] Interview preparation system
 - [ ] Analytics intelligence
 - [ ] Real-time notifications + background jobs
@@ -213,6 +211,12 @@ calibrate-ai/
 │   │   │       ├── card.tsx               # Stat card component
 │   │   │       ├── dashboard-skeleton.tsx # Loading skeleton
 │   │   │       └── recent-applications-table.tsx  # Recent 5 applications
+│   │   ├── resume-enhancer/
+│   │   │   ├── page.tsx           # Resume Enhancer entry page
+│   │   │   └── components/
+│   │   │       ├── ResumeEnhancerForm.tsx    # Upload & input configuration
+│   │   │       ├── ResumeEnhancerLoading.tsx # Progress steps animation
+│   │   │       └── EnhancedResumeResult.tsx  # Tailored resume preview & printing
 │   │   ├── job-applications/
 │   │   │   ├── page.tsx           # Applications list with data table
 │   │   │   ├── new/
@@ -235,10 +239,16 @@ calibrate-ai/
 │   │       ├── analysis/
 │   │       │   └── [applicationId]/route.ts   # GET analyses / POST run AI analysis
 │   │       ├── dashboard/route.ts             # GET dashboard aggregate data
-│   │       └── resume/route.ts                # POST PDF resume upload + text extraction
+│   │       └── resume/
+│   │           ├── route.ts                   # POST PDF resume upload + text extraction / raw text saving
+│   │           └── enhance/
+│   │               └── route.ts               # POST tailors resume to job description
 │   ├── actions/
 │   │   ├── application.ts         # Server Actions: create, update, delete
 │   │   └── auth.ts                # Server Actions: signup, login
+│   ├── hooks/
+│   │   ├── useEnhancedResume.tsx  # State & API management for resume tailoring
+│   │   └── useResume.tsx          # State & validation management for resume uploads
 │   ├── components/
 │   │   ├── sidebar.tsx                    # Responsive sidebar with navigation
 │   │   ├── sidebar-icon.tsx               # Dynamic sidebar icon resolver
@@ -477,20 +487,69 @@ Better Auth handles all auth endpoints automatically through the catch-all route
 | `updateApplication` | `src/actions/application.ts` | Update an existing application (ownership check) |
 | `deleteApplication` | `src/actions/application.ts` | Delete application + cascade delete analyses     |
 
-### Resume Upload / Parsing
+### Resume & Enhancement APIs
 
-| Method | Endpoint      | Description                                                 | Auth |
-| ------ | ------------- | ----------------------------------------------------------- | ---- |
-| `POST` | `/api/resume` | Upload a **PDF** resume and extract plain text for analysis | ✅   |
+| Method | Endpoint              | Description                                                          | Auth |
+| ------ | --------------------- | -------------------------------------------------------------------- | ---- |
+| `POST` | `/api/resume`         | Parse a PDF file OR save a resume text and associate it with user.   | ✅   |
+| `POST` | `/api/resume/enhance` | Tailor and rewrite a resume to align with a specific job description. | ✅   |
 
-**POST Request (multipart/form-data):**
+**POST `/api/resume` Request Options:**
 
-- `resume`: PDF file (max **5MB**)
+1. **Multipart Form-Data (File Upload):**
+   - `resume`: PDF file (max **5MB**)
+   - Query Parameter: `?save=true` (optional, to persist in DB)
 
-**POST Response (200):**
+2. **JSON Payload (Raw Text):**
+   - Headers: `Content-Type: application/json`
+   - Body:
+     ```json
+     {
+       "content": "string (raw resume text)",
+       "name": "string (optional, defaults to 'Enhanced Resume.pdf')"
+     }
+     ```
+   - Query Parameter: `?save=true` (optional, to persist in DB)
+
+**POST `/api/resume` Response (200):**
+
+- **If `save=true` parameter is present:**
+  ```json
+  {
+    "success": true,
+    "resume": {
+      "id": 1,
+      "name": "ResumeName.pdf",
+      "userId": 1,
+      "analysisId": null,
+      "content": "...resume text...",
+      "createdAt": "2026-06-13T09:05:00.000Z"
+    }
+  }
+  ```
+- **If `save` parameter is missing or false:**
+  ```json
+  { "success": true, "resume": "...extracted or provided text..." }
+  ```
+
+---
+
+**POST `/api/resume/enhance` Request Body:**
 
 ```json
-{ "success": true, "resume": "...extracted text..." }
+{
+  "resume": "string (extracted resume text)",
+  "jobDescription": "string (job description content)"
+}
+```
+
+**POST `/api/resume/enhance` Response (200):**
+
+```json
+{
+  "success": true,
+  "data": "string (AI-enhanced resume content in Markdown)"
+}
 ```
 
 ### AI Analysis
@@ -829,6 +888,7 @@ The application uses a custom teal-centric design system defined in `globals.css
 | ✅ Done        | Responsive sidebar with mobile sheet                 |
 | ✅ Done        | TanStack Table with sorting, filtering, pagination   |
 | ✅ Done        | PDF resume upload + parsing                          |
+| ✅ Done        | AI-powered resume enhancer and optimization          |
 | 📋 Planned     | Bulk CSV import for applications                     |
 | 📋 Planned     | Application timeline / activity log                  |
 | 📋 Planned     | Email notifications for status changes               |
