@@ -2,6 +2,7 @@ import {
   ArrowRight,
   BarChart3,
   ClipboardList,
+  History,
   Search,
   Sparkles,
   Target,
@@ -22,43 +23,68 @@ const features = [
     icon: ClipboardList,
     title: "Track everything",
     description:
-      "Company, role, salary, status, description — all in one place with sorting and search.",
+      "Log company, role, salary, status, description, and key links in one searchable, paginated dashboard.",
+  },
+  {
+    icon: Upload,
+    title: "PDF Resume Parsing",
+    description:
+      "Upload your resume in PDF format to instantly parse and extract text without manually copy-pasting.",
+  },
+  {
+    icon: Target,
+    title: "AI Fit Analysis",
+    description:
+      "Compare your resume against any job description to get a calibrated match score, skill breakdown, and specific advice.",
   },
   {
     icon: Sparkles,
-    title: "AI fit analysis",
+    title: "AI Resume Enhancer",
     description:
-      "Paste your resume against any job description. Get a calibrated score, skill breakdown, and actionable next steps.",
+      "Optimize and rewrite your resume points to target specific job descriptions with real-time markdown rendering.",
+  },
+  {
+    icon: History,
+    title: "Versioning & History",
+    description:
+      "Save multiple resume versions per application, view your version timeline, and compare changes side-by-side.",
   },
   {
     icon: BarChart3,
-    title: "See the big picture",
+    title: "Trend Visualization",
     description:
-      "Dashboard with totals, averages, status breakdowns, and your most recent activity.",
+      "Visualize your application pipeline metrics and follow your resume score trend progression over time.",
   },
 ];
 
 const steps = [
   {
     number: "01",
-    icon: Upload,
+    icon: ClipboardList,
     title: "Add a job application",
     description:
-      "Enter the company, role, job description, salary, and location. It takes about a minute.",
+      "Enter the company, title, description, and salary to log the role in your pipeline.",
   },
   {
     number: "02",
-    icon: Target,
-    title: "Run an AI analysis",
+    icon: Upload,
+    title: "Upload & analyze resume",
     description:
-      "Paste your resume and let the AI compare it against the job description. You get a score from 0–100, a list of matching and missing skills, and a written recommendation.",
+      "Upload your PDF resume. The AI runs a calibrated analysis comparing your qualifications to the job description.",
   },
   {
     number: "03",
-    icon: Search,
-    title: "Decide what to do next",
+    icon: Sparkles,
+    title: "Tailor with AI guidance",
     description:
-      "Use the score and skill gaps to improve your resume, prioritize applications, or move on to better-fitting roles.",
+      "Identify skill gaps and use the AI enhancer to optimize your bullet points, tailoring your application for maximum fit.",
+  },
+  {
+    number: "04",
+    icon: History,
+    title: "Iterate and track progress",
+    description:
+      "Save new resume versions as you edit, visualize score progression, and compare versions side-by-side before submitting.",
   },
 ];
 
@@ -139,11 +165,9 @@ const Home = async () => {
             </>
           )}
         </div>
-      </section>
-
-      {/* What it does */}
+      </section>      {/* What it does */}
       <section className="border-t border-border px-6 py-16 sm:py-20">
-        <div className="mx-auto grid max-w-3xl gap-10 sm:grid-cols-3 sm:gap-8">
+        <div className="mx-auto grid max-w-5xl gap-10 sm:grid-cols-3 sm:gap-8 sm:gap-y-12">
           {features.map((feature) => (
             <div key={feature.title}>
               <feature.icon className="h-5 w-5 text-primary" />
@@ -163,7 +187,7 @@ const Home = async () => {
             How it works
           </h2>
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            Three steps. No setup, no integrations, no credit card.
+            Four steps. No setup, no integrations, no credit card.
           </p>
 
           <div className="mt-12 space-y-10">
@@ -235,6 +259,40 @@ const Home = async () => {
               A plain-English summary: your strongest points to lead with, the
               most critical gap, and one specific action to take before applying.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Spotlight Section */}
+      <section className="border-t border-border px-6 py-16 sm:py-20 bg-muted/30">
+        <div className="mx-auto max-w-3xl">
+          <div className="text-center">
+            <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
+              Optimize your application workflow
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Don&apos;t just analyze compatibility. Address the gaps and iterate.
+            </p>
+          </div>
+          <div className="mt-12 grid gap-8 md:grid-cols-2">
+            <div className="flex flex-col rounded-xl border border-border bg-background p-6 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <h3 className="mt-4 text-base font-semibold">AI Resume Enhancer</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Optimize and rewrite your resume bullet points using advanced LLM guidance targeting the job&apos;s missing skills. Formats in clean markdown with instant side-by-side previews and custom print-friendly layouts.
+              </p>
+            </div>
+            <div className="flex flex-col rounded-xl border border-border bg-background p-6 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <History className="h-5 w-5" />
+              </div>
+              <h3 className="mt-4 text-base font-semibold">Version History & Comparison</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Track your revisions with timeline tracking. Plot your score trends over time with interactive progression charts, and compare any two resume versions side-by-side to review changes before you submit.
+              </p>
+            </div>
           </div>
         </div>
       </section>
