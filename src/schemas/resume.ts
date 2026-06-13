@@ -9,28 +9,28 @@ export const ResumeSchema = z.object({
   createdAt: z.date(),
 });
 
+export const BaseResumeFileSchema = z
+  .instanceof(FileList)
+  .refine((files: FileList) => files[0]?.type === "application/pdf", {
+    message: "Only PDF files are accepted.",
+  })
+  .refine((files: FileList) => files[0]?.size < 5 * 1024 * 1024, {
+    message: "File size must be less than 5MB.",
+  });
+
 export const ResumeInputSchema = z.object({
-  resume: z
-    .instanceof(FileList)
-    .refine((files: FileList) => files[0]?.type === "application/pdf", {
-      message: "Only PDF files are accepted.",
-    })
-    .refine((files: FileList) => files[0]?.size < 5 * 1024 * 1024, {
-      message: "File size must be less than 5MB.",
-    })
-    .refine(
-      async (files: FileList) => {
-        const res = await fetch(
-          `/api/resume/check-name?resumeName=${files[0]?.name}`,
-        );
-        const { exists } = await res.json();
-        return !exists;
-      },
-      {
-        message: "Resume with this name already exists.",
-      },
-    )
-    .nullable(),
+  resume: BaseResumeFileSchema.refine(
+    async (files: FileList) => {
+      const res = await fetch(
+        `/api/resume/check-name?resumeName=${files[0]?.name}`,
+      );
+      const { exists } = await res.json();
+      return !exists;
+    },
+    {
+      message: "Resume with this name already exists.",
+    },
+  ).nullable(),
   resumeName: z
     .string()
     .max(50, { message: "New file name must be less than 50 characters." })
@@ -40,7 +40,7 @@ export const ResumeInputSchema = z.object({
 });
 
 export const EnhancedResumeInputSchema = z.object({
-  resume: ResumeInputSchema.shape.resume,
+  resume: BaseResumeFileSchema.nullable(),
   resumeName: ResumeInputSchema.shape.resumeName,
   jobDescription: z
     .string()
@@ -48,3 +48,4 @@ export const EnhancedResumeInputSchema = z.object({
     .max(10000, { message: "Job description is too long." })
     .trim(),
 });
+
